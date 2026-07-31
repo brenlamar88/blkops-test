@@ -3,11 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useApp, useQuery, fetchAll } from '../lib/data'
 import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
+import CompanyPicker from '../components/CompanyPicker'
 import { fmtDate, personName } from '../lib/format'
 import { NA_TYPES, NA_SHAPE, UNIT_TYPES, RECOMMENDATIONS, MH_SETTINGS,
          TRAINING_NEEDS, ELDERCARE_FACILITY_TYPES, HOSPITAL_FACILITY_TYPES } from '../lib/enums'
 
 export function NaList() {
+  const nav = useNavigate()
   const [type, setType] = useState('')
   const [rec, setRec] = useState('')
 
@@ -28,8 +30,18 @@ export function NaList() {
           <p>One per company. Every edit is kept with who made it and when, so you can
              see how an account's needs changed over time.</p>
         </div>
-        <Link className="btn" to="/companies">Find a company</Link>
       </div>
+
+      <div className="card" style={{ marginBottom: 14 }}><div className="card-body">
+        <div className="section-label" style={{ marginTop: 0 }}>Start or update an analysis</div>
+        <div style={{ maxWidth: 460 }}>
+          <CompanyPicker onChange={(c) => c && nav(`/needs-analysis/company/${c.id}`)} />
+        </div>
+        <div className="hint" style={{ marginTop: 6 }}>
+          Search the company, then fill out the form for its type. There is one
+          analysis per company; picking one that already has an analysis opens it to update.
+        </div>
+      </div></div>
 
       <div className="toolbar">
         <select value={type} onChange={(e) => setType(e.target.value)}>

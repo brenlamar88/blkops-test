@@ -97,6 +97,13 @@ Never edit those files again. Every change is a new timestamped migration.
 ./scripts/verify.sh --schema # migrations only
 ```
 
+Applying to the **live** database is separate from writing a migration — see
+`DEPLOY.md`. `./scripts/deploy-db.sh` applies `scripts/catch-up.sql`, an
+idempotent bundle of every post-baseline migration. **When you add a migration,
+append its idempotent form to `scripts/catch-up.sql`** (use `create ... if not
+exists`, `create or replace`, `drop ... if exists` then create, or guarded `do`
+blocks) so the deploy script stays complete.
+
 25 assertions in `supabase/tests/`. Plain SQL, no pgTAP dependency. Run before
 any schema change — writing these found four real bugs, including two that
 would never have surfaced through the UI.

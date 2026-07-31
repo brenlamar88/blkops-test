@@ -25,7 +25,7 @@ export default function Reports() {
   const acts = useQuery(() => which !== 'activities' || !facilityId ? null
     : fetchAll(() => supabase.from('daily_activities')
         .select(`*, user:profiles(first_name,last_name), company:companies(name),
-                 stage:service_cycle_stages(short_label)`)
+                 territory:territories(name), stage:service_cycle_stages(short_label)`)
         .eq('facility_id', facilityId)
         .gte('activity_date', from).lte('activity_date', to)
         .order('activity_date', { ascending: false }).order('id')),
@@ -34,7 +34,7 @@ export default function Reports() {
   const refs = useQuery(() => which !== 'referrals' || !facilityId ? null
     : fetchAll(() => supabase.from('referrals')
         .select(`*, submitter:profiles(first_name,last_name), company:companies(name),
-                 denial:denial_reasons(name)`)
+                 territory:territories(name), denial:denial_reasons(name)`)
         .eq('facility_id', facilityId)
         .gte('referral_date', from).lte('referral_date', to)
         .order('referral_date', { ascending: false }).order('id')),
@@ -72,6 +72,8 @@ export default function Reports() {
         { key: 'activity_date', label: 'Date', render: (r) => fmtDate(r.activity_date) },
         { key: 'company', label: 'Company', csv: (r) => r.company?.name,
           render: (r) => r.company?.name ?? '—' },
+        { key: 'territory', label: 'Territory', csv: (r) => r.territory?.name,
+          render: (r) => r.territory?.name ?? '—' },
         { key: 'activity_type', label: 'Activity' },
         { key: 'type_of_contact', label: 'Contact type' },
         { key: 'stage', label: 'Stage', csv: (r) => r.stage?.short_label,
@@ -93,6 +95,8 @@ export default function Reports() {
           render: (r) => `${r.patient_first_name ?? '?'} ${r.patient_last_initial ?? '?'}.` },
         { key: 'company', label: 'Referred by', csv: (r) => r.company?.name,
           render: (r) => r.company?.name ?? '—' },
+        { key: 'territory', label: 'Territory', csv: (r) => r.territory?.name,
+          render: (r) => r.territory?.name ?? '—' },
         { key: 'admission_status', label: 'Outcome',
           render: (r) => r.admission_status ?? 'Pending' },
         { key: 'denial', label: 'Denial reason', csv: (r) => r.denial?.name,

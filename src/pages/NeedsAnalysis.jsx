@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery } from '../lib/data'
+import { useApp, useQuery, fetchAll } from '../lib/data'
 import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
 import { fmtDate, personName } from '../lib/format'
 import { NA_TYPES, NA_SHAPE, UNIT_TYPES, RECOMMENDATIONS, MH_SETTINGS,
@@ -11,14 +11,14 @@ export function NaList() {
   const [type, setType] = useState('')
   const [rec, setRec] = useState('')
 
-  const { rows, loading, error } = useQuery(() => {
+  const { rows, loading, error } = useQuery(() => fetchAll(() => {
     let q = supabase.from('needs_analysis')
       .select('*, company:companies(id,name,city)')
-      .order('last_updated_at', { ascending: false })
+      .order('last_updated_at', { ascending: false }).order('id')
     if (type) q = q.eq('analysis_type', type)
     if (rec) q = q.eq('recommendation', rec)
-    return q.limit(500)
-  }, [type, rec])
+    return q
+  }), [type, rec])
 
   return (
     <>

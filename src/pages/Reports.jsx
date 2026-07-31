@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, today, daysAgo } from '../lib/data'
+import { useApp, useQuery, fetchAll, today, daysAgo } from '../lib/data'
 import { DataTable, Empty, Banner, Chip } from '../components/ui'
 import { fmtDate, personName } from '../lib/format'
 import { downloadCsv } from '../lib/csv'
@@ -16,28 +16,28 @@ export default function Reports() {
   // Rep productivity comes off the revision ledger: one row per save,
   // whether that save created an analysis or edited one.
   const prod = useQuery(() => which !== 'productivity' ? null
-    : supabase.from('needs_analysis_revisions')
-        .select('submitted_by, is_initial, submitted_at, source')
+    : fetchAll(() => supabase.from('needs_analysis_revisions')
+        .select('submitted_by, is_initial, submitted_at, source, id')
         .eq('source', 'user')
         .gte('submitted_at', from).lte('submitted_at', to + 'T23:59:59')
-        .limit(5000), [which, from, to])
+        .order('id')), [which, from, to])
 
   const acts = useQuery(() => which !== 'activities' || !facilityId ? null
-    : supabase.from('daily_activities')
+    : fetchAll(() => supabase.from('daily_activities')
         .select(`*, user:profiles(first_name,last_name), company:companies(name),
                  stage:service_cycle_stages(short_label)`)
         .eq('facility_id', facilityId)
         .gte('activity_date', from).lte('activity_date', to)
-        .order('activity_date', { ascending: false }).limit(5000),
+        .order('activity_date', { ascending: false }).order('id')),
     [which, facilityId, from, to])
 
   const refs = useQuery(() => which !== 'referrals' || !facilityId ? null
-    : supabase.from('referrals')
+    : fetchAll(() => supabase.from('referrals')
         .select(`*, submitter:profiles(first_name,last_name), company:companies(name),
                  denial:denial_reasons(name)`)
         .eq('facility_id', facilityId)
         .gte('referral_date', from).lte('referral_date', to)
-        .order('referral_date', { ascending: false }).limit(5000),
+        .order('referral_date', { ascending: false }).order('id')),
     [which, facilityId, from, to])
 
   const prodRows = (() => {

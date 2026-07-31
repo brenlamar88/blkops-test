@@ -125,7 +125,7 @@ export function AppProvider({ children }) {
 ------------------------------------------------------------------ */
 
 export function useQuery(build, deps = []) {
-  const [state, setState] = useState({ rows: [], loading: true, error: null })
+  const [state, setState] = useState({ rows: [], count: null, loading: true, error: null })
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
@@ -134,14 +134,37 @@ export function useQuery(build, deps = []) {
     Promise.resolve(build())
       .then((res) => {
         if (dead || !res) return
-        setState({ rows: res.data ?? [], loading: false, error: res.error?.message ?? null })
+        setState({ rows: res.data ?? [], count: res.count ?? null,
+                   loading: false, error: res.error?.message ?? null })
       })
-      .catch((e) => { if (!dead) setState({ rows: [], loading: false, error: e.message }) })
+      .catch((e) => { if (!dead) setState({ rows: [], count: null, loading: false, error: e.message }) })
     return () => { dead = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick])
 
   return { ...state, refresh: () => setTick((t) => t + 1) }
+}
+
+/* ------------------------------------------------------------------
+   PostgREST caps every response at a server-side "max rows" limit
+   (1000 by default on Supabase), so a plain .limit(5000) silently
+   returns at most 1000 rows and dashboards undercount. fetchAll pages
+   through the whole result in chunks no larger than that cap, so the
+   total is complete regardless of the setting.
+
+   Pass a factory that builds a FRESH query each call — a builder can be
+   ranged only once — and give it a deterministic order (a unique column
+   last) so pages don't overlap or skip at their boundaries.
+------------------------------------------------------------------ */
+export async function fetchAll(makeQuery, pageSize = 1000) {
+  const all = []
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await makeQuery().range(from, from + pageSize - 1)
+    if (error) return { data: all, error }
+    all.push(...(data ?? []))
+    if (!data || data.length < pageSize) break
+  }
+  return { data: all, error: null }
 }
 
 export async function save(table, id, values) {

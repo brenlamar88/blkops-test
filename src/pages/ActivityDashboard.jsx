@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, today, daysAgo } from '../lib/data'
+import { useApp, useQuery, fetchAll, today, daysAgo } from '../lib/data'
 import { Banner } from '../components/ui'
 import { UNIT_TYPES } from '../lib/enums'
 import { DonutBlock, MiniPanel, BreakdownPanel, NoData, colorMap } from '../components/charts'
@@ -69,24 +69,24 @@ export default function ActivityDashboard() {
     const m = {}; for (const t of lookups.territories ?? []) m[t.id] = t.name; return m
   }, [lookups.territories])
 
-  const actsQ = useQuery(() => facilityId ? supabase.from('daily_activities')
+  const actsQ = useQuery(() => facilityId ? fetchAll(() => supabase.from('daily_activities')
     .select(`id, activity_type, unit_type, user_id, source_rep_name,
              company:companies(name, category_id),
              user:profiles(first_name,last_name)`)
     .eq('facility_id', facilityId)
     .gte('activity_date', from).lte('activity_date', to)
-    .limit(5000) : null, [facilityId, from, to])
+    .order('id')) : null, [facilityId, from, to])
 
-  const refsQ = useQuery(() => facilityId ? supabase.from('referrals')
+  const refsQ = useQuery(() => facilityId ? fetchAll(() => supabase.from('referrals')
     .select(`id, admission_status, category_id, territory_id,
              submitted_by, source_rep_name, submitter:profiles(first_name,last_name)`)
     .eq('facility_id', facilityId)
     .gte('referral_date', from).lte('referral_date', to)
-    .limit(5000) : null, [facilityId, from, to])
+    .order('id')) : null, [facilityId, from, to])
 
-  const naQ = useQuery(() => facilityId ? supabase.from('needs_analysis_full')
+  const naQ = useQuery(() => facilityId ? fetchAll(() => supabase.from('needs_analysis_full')
     .select('id, analysis_type, category_id, territory_id')
-    .eq('facility_id', facilityId).limit(5000) : null, [facilityId])
+    .eq('facility_id', facilityId).order('id')) : null, [facilityId])
 
   // ---- activities: derive dropdowns, then apply client-side filters ----
   const allActs = actsQ.rows

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, save, remove, territoryForCity } from '../lib/data'
+import { useApp, useQuery, fetchAll, save, remove, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, TerritoryChip } from '../components/ui'
 
 const SEL = `*, role:contact_roles(id,name), company:companies(id,name,city),
@@ -13,15 +13,16 @@ export function ContactList() {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('')
 
-  const { rows, loading, error, refresh } = useQuery(() => {
-    let q = supabase.from('contacts').select(SEL).eq('active', true).order('last_name')
+  const { rows, loading, error, refresh } = useQuery(() => fetchAll(() => {
+    let q = supabase.from('contacts').select(SEL).eq('active', true)
+      .order('last_name').order('id')
     if (role) q = q.eq('role_id', role)
     if (search.trim()) {
       const s = `%${search.trim()}%`
       q = q.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`)
     }
-    return q.limit(300)
-  }, [search, role])
+    return q
+  }), [search, role])
 
   const del = async (r) => {
     if (!confirm(`Remove ${r.first_name} ${r.last_name}?`)) return
@@ -95,8 +96,8 @@ export function ContactForm() {
   const [busy, setBusy] = useState(false)
 
   const { rows: companies } = useQuery(
-    () => supabase.from('companies').select('id,name').eq('active', true)
-      .is('merged_into_id', null).order('name').limit(1000), [])
+    () => fetchAll(() => supabase.from('companies').select('id,name').eq('active', true)
+      .is('merged_into_id', null).order('name').order('id')), [])
 
   useQuery(async () => {
     if (!id) return null

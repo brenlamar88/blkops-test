@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery } from '../lib/data'
+import { useApp, useQuery, fetchAll } from '../lib/data'
 import { Select, Banner, Loading, Empty, TerritoryChip } from '../components/ui'
 
 /* ------------------------------------------------------------------
@@ -28,8 +28,8 @@ export default function TerritoryMap() {
     : null, [facilityId])
 
   // Every distinct company city in the org — the candidate list to assign.
-  const cityQ = useQuery(() => supabase.from('companies')
-    .select('city').eq('active', true).is('merged_into_id', null).limit(5000), [])
+  const cityQ = useQuery(() => fetchAll(() => supabase.from('companies')
+    .select('city').eq('active', true).is('merged_into_id', null).order('id')), [])
 
   // Union of company cities and already-mapped cities, one row per city,
   // carrying its current mapping (if any).

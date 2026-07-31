@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, save, today, daysAgo, territoryForCity } from '../lib/data'
+import { useApp, useQuery, fetchAll, save, today, daysAgo, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip, TerritoryChip } from '../components/ui'
 import QuickAddContact from '../components/QuickAddContact'
 import { fmtDate, personName } from '../lib/format'
@@ -19,11 +19,13 @@ export function ReferralList() {
 
   const { rows, loading, error } = useQuery(() => {
     if (!facilityId) return null
-    let q = supabase.from('referrals').select(SEL).eq('facility_id', facilityId)
-      .gte('referral_date', from).lte('referral_date', to)
-      .order('referral_date', { ascending: false })
-    if (status) q = q.eq('admission_status', status)
-    return q.limit(500)
+    return fetchAll(() => {
+      let q = supabase.from('referrals').select(SEL).eq('facility_id', facilityId)
+        .gte('referral_date', from).lte('referral_date', to)
+        .order('referral_date', { ascending: false }).order('id')
+      if (status) q = q.eq('admission_status', status)
+      return q
+    })
   }, [facilityId, from, to, status])
 
   const s = useMemo(() => {
@@ -115,8 +117,8 @@ export function ReferralForm() {
   const [busy, setBusy] = useState(false)
 
   const { rows: companies } = useQuery(
-    () => supabase.from('companies').select('id,name,city,category_id,subcategory_id')
-      .eq('active', true).is('merged_into_id', null).order('name').limit(1000), [])
+    () => fetchAll(() => supabase.from('companies').select('id,name,city,category_id,subcategory_id')
+      .eq('active', true).is('merged_into_id', null).order('name').order('id')), [])
 
   const { rows: contacts, refresh: refreshContacts } = useQuery(
     () => v.prospect_company_id

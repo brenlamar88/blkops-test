@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, save, territoryForCity } from '../lib/data'
+import { useApp, useQuery, fetchAll, save, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, Chip, TerritoryChip } from '../components/ui'
 import { fmtDate } from '../lib/format'
 
@@ -12,16 +12,16 @@ export function CompanyList() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
 
-  const { rows, loading, error } = useQuery(() => {
+  const { rows, loading, error } = useQuery(() => fetchAll(() => {
     let q = supabase.from('companies').select(SEL)
-      .eq('active', true).is('merged_into_id', null).order('name')
+      .eq('active', true).is('merged_into_id', null).order('name').order('id')
     if (category) q = q.eq('category_id', category)
     if (search.trim()) {
       const s = `%${search.trim()}%`
       q = q.or(`name.ilike.${s},city.ilike.${s}`)
     }
-    return q.limit(300)
-  }, [search, category])
+    return q
+  }), [search, category])
 
   // Territory for this account, derived from its city via the selected
   // campus's map — the same resolution the forms and database use.

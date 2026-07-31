@@ -12,11 +12,25 @@ const Kpi = ({ label, value, loading }) => (
 export default function Dashboard() {
   const { profile, facility, facilityId } = useApp()
 
-  const { rows: companies, loading: lc } = useQuery(
-    () => supabase.from('companies').select('id').eq('active', true)
-      .is('merged_into_id', null).limit(5000), [])
-  const { rows: contacts, loading: lk } = useQuery(
-    () => supabase.from('contacts').select('id').eq('active', true).limit(5000), [])
+  // Count tiles use exact server-side counts (head:true fetches no rows), so
+  // they are never capped by the row limit.
+  const { count: companyCount, loading: lc } = useQuery(
+    () => supabase.from('companies').select('id', { count: 'exact', head: true })
+      .eq('active', true).is('merged_into_id', null), [])
+  const { count: contactCount, loading: lk } = useQuery(
+    () => supabase.from('contacts').select('id', { count: 'exact', head: true })
+      .eq('active', true), [])
+  const { count: naCount, loading: ln } = useQuery(
+    () => supabase.from('needs_analysis').select('id', { count: 'exact', head: true }), [])
+  const { count: actWeekCount, loading: law } = useQuery(
+    () => facilityId ? supabase.from('daily_activities').select('id', { count: 'exact', head: true })
+      .eq('facility_id', facilityId).gte('activity_date', daysAgo(7)) : null, [facilityId])
+  const { count: pendingCount, loading: lrc } = useQuery(
+    () => facilityId ? supabase.from('referrals').select('id', { count: 'exact', head: true })
+      .eq('facility_id', facilityId)
+      .or('admission_status.is.null,admission_status.eq.Pending') : null, [facilityId])
+
+  // The two feeds below are previews, so a small limit is intentional.
   const { rows: acts, loading: la } = useQuery(
     () => facilityId ? supabase.from('daily_activities')
       .select('*, company:companies(id,name), user:profiles(first_name,last_name)')
@@ -28,8 +42,6 @@ export default function Dashboard() {
       .eq('facility_id', facilityId)
       .or('admission_status.is.null,admission_status.eq.Pending')
       .order('referral_date', { ascending: false }).limit(10) : null, [facilityId])
-  const { rows: nas, loading: ln } = useQuery(
-    () => supabase.from('needs_analysis').select('id').limit(5000), [])
 
   return (
     <>
@@ -42,11 +54,11 @@ export default function Dashboard() {
       </div>
 
       <div className="kpis" style={{ marginBottom: 16 }}>
-        <Kpi label="Companies" value={companies.length} loading={lc} />
-        <Kpi label="Contacts" value={contacts.length} loading={lk} />
-        <Kpi label="Needs analyses" value={nas.length} loading={ln} />
-        <Kpi label="Activity, 7 days" value={acts.length} loading={la} />
-        <Kpi label="Referrals pending" value={pending.length} loading={lr} />
+        <Kpi label="Companies" value={companyCount ?? 0} loading={lc} />
+        <Kpi label="Contacts" value={contactCount ?? 0} loading={lk} />
+        <Kpi label="Needs analyses" value={naCount ?? 0} loading={ln} />
+        <Kpi label="Activity, 7 days" value={actWeekCount ?? 0} loading={law} />
+        <Kpi label="Referrals pending" value={pendingCount ?? 0} loading={lrc} />
       </div>
 
       <div className="card" style={{ marginBottom: 14 }}><div className="card-body">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, save, remove, today, daysAgo, territoryForCity } from '../lib/data'
+import { useApp, useQuery, fetchAll, save, remove, today, daysAgo, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
 import QuickAddContact from '../components/QuickAddContact'
 import { fmtDate, fmtTime, personName } from '../lib/format'
@@ -18,12 +18,14 @@ export function ActivityList() {
 
   const { rows, loading, error, refresh } = useQuery(() => {
     if (!facilityId) return null
-    let q = supabase.from('daily_activities').select(SEL)
-      .eq('facility_id', facilityId)
-      .gte('activity_date', from).lte('activity_date', to)
-      .order('activity_date', { ascending: false })
-    if (user) q = q.eq('user_id', user)
-    return q.limit(500)
+    return fetchAll(() => {
+      let q = supabase.from('daily_activities').select(SEL)
+        .eq('facility_id', facilityId)
+        .gte('activity_date', from).lte('activity_date', to)
+        .order('activity_date', { ascending: false }).order('id')
+      if (user) q = q.eq('user_id', user)
+      return q
+    })
   }, [facilityId, from, to, user])
 
   const del = async (r) => {
@@ -106,8 +108,8 @@ export function ActivityForm() {
   const [busy, setBusy] = useState(false)
 
   const { rows: companies } = useQuery(
-    () => supabase.from('companies').select('id,name,city').eq('active', true)
-      .is('merged_into_id', null).order('name').limit(1000), [])
+    () => fetchAll(() => supabase.from('companies').select('id,name,city').eq('active', true)
+      .is('merged_into_id', null).order('name').order('id')), [])
 
   const { rows: contacts, refresh: refreshContacts } = useQuery(
     () => v.company_id

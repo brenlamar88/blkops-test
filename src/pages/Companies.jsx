@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, save } from '../lib/data'
-import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
+import { useApp, useQuery, save, territoryForCity } from '../lib/data'
+import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, Chip, TerritoryChip } from '../components/ui'
 import { fmtDate } from '../lib/format'
 
 const SEL = `*, category:categories(id,name), subcategory:subcategories(id,name)`
@@ -16,9 +16,17 @@ export function CompanyList() {
     let q = supabase.from('companies').select(SEL)
       .eq('active', true).is('merged_into_id', null).order('name')
     if (category) q = q.eq('category_id', category)
-    if (search.trim()) q = q.ilike('name', `%${search.trim()}%`)
+    if (search.trim()) {
+      const s = `%${search.trim()}%`
+      q = q.or(`name.ilike.${s},city.ilike.${s}`)
+    }
     return q.limit(300)
   }, [search, category])
+
+  // Territory for this account, derived from its city via the selected
+  // campus's map — the same resolution the forms and database use.
+  const terrName = (tid) => (lookups.territories ?? []).find((t) => t.id === tid)?.name
+  const coTerr = (r) => terrName(territoryForCity(lookups.territoryCities, r.city))
 
   return (
     <>
@@ -32,7 +40,7 @@ export function CompanyList() {
       </div>
 
       <div className="toolbar">
-        <input placeholder="Search by name…" value={search}
+        <input placeholder="Search company or city…" value={search}
                onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 230 }} />
         <select value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">All categories</option>
@@ -45,7 +53,7 @@ export function CompanyList() {
       </div>
 
       <div className="card">
-        <DataTable rows={rows} loading={loading} error={error}
+        <DataTable rows={rows} loading={loading} error={error} territoryOf={coTerr}
           empty={<Empty title="No companies yet"
                         body="Add your first account, or import from the old sites."
                         action={<Link className="btn btn-primary" to="/companies/new">Add company</Link>} />}
@@ -54,9 +62,9 @@ export function CompanyList() {
               render: (r) => <Link to={`/companies/${r.id}`}>{r.name}</Link> },
             { key: 'category', label: 'Category', sortValue: (r) => r.category?.name,
               render: (r) => r.category?.name ?? '—' },
-            { key: 'subcategory', label: 'Subcategory', sortValue: (r) => r.subcategory?.name,
-              render: (r) => r.subcategory?.name ?? '—' },
             { key: 'city', label: 'City' },
+            { key: 'territory', label: 'Territory', sortable: false,
+              render: (r) => <TerritoryChip name={coTerr(r)} /> },
             { key: 'phone', label: 'Phone',
               render: (r) => r.phone ? <a className="mono" href={`tel:${r.phone}`}>{r.phone}</a> : '—' },
             { key: 'actions', label: '', sortable: false,
@@ -166,8 +174,11 @@ export function CompanyForm() {
 
 export function CompanyDetail() {
   const { id } = useParams()
+  const { lookups } = useApp()
   const { rows: [co] = [], loading } = useQuery(
     () => supabase.from('companies').select(SEL).eq('id', id), [id])
+  const coTerr = (lookups.territories ?? [])
+    .find((t) => t.id === territoryForCity(lookups.territoryCities, co?.city))?.name
   const { rows: contacts } = useQuery(
     () => supabase.from('contacts').select('*, role:contact_roles(name)')
       .eq('company_id', id).eq('active', true).order('last_name'), [id])
@@ -185,9 +196,10 @@ export function CompanyDetail() {
     <>
       <div className="page-head">
         <div>
-          <h1>{co.name}</h1>
-          <p>{[co.category?.name, co.subcategory?.name, co.city, co.state]
+          <h1 className="caps">{co.name}</h1>
+          <p className="caps">{[co.category?.name, co.subcategory?.name, co.city, co.state]
                 .filter(Boolean).join(' · ')}</p>
+          {coTerr && <div style={{ marginTop: 6 }}><TerritoryChip name={coTerr} /></div>}
         </div>
         <div className="row-actions">
           <Link className="btn" to={`/companies/${id}/edit`}>Edit</Link>

@@ -335,16 +335,84 @@ table.mini .idx { color: var(--ink-3); margin-right: 8px; font-variant-numeric: 
 .auth-card .field { margin-bottom: 12px; }
 .auth-card .btn { width: 100%; justify-content: center; }
 
+/* ---------------- All-caps data ----------------
+   Show values in caps like the old Gravity Forms views. Non-destructive:
+   stored values are unchanged and territory/city matching stays
+   case-insensitive — this is display only. */
+tbody td,
+table.mini td,
+.legend .lg-label,
+.chip,
+.caps { text-transform: uppercase; }
+/* Action buttons and links-as-buttons stay sentence case, not shouty. */
+tbody td .btn { text-transform: none; }
+
+/* ---------------- Mobile top bar / drawer ---------------- */
+
+.mobile-top { display: none; }
+.scrim { display: none; }
+
+.mobile-top b { color: #fff; font-size: 15px; letter-spacing: .02em; }
+.mobile-top .mtop-campus {
+  margin-left: auto; font-size: 12px; color: #8fa3b6; font-family: var(--mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45vw;
+}
+.hamburger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0; border: 0; border-radius: var(--r);
+  background: rgba(255,255,255,.08); color: #fff; cursor: pointer; flex: 0 0 auto;
+}
+.hamburger:hover { background: rgba(255,255,255,.16); }
+.hamburger svg { width: 22px; height: 22px; }
+
 /* ---------------- Responsive ---------------- */
 
 @media (max-width: 900px) {
   .shell { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; }
-  .nav { display: flex; flex-wrap: wrap; gap: 3px; }
-  .nav-group { margin: 0; }
-  .nav-group > p { display: none; }
+
+  .mobile-top {
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 30;
+    background: var(--ink); padding: 9px 12px;
+  }
+
+  /* Sidebar becomes an off-canvas drawer. */
+  .sidebar {
+    position: fixed; top: 0; left: 0; z-index: 40;
+    width: 268px; max-width: 84vw; height: 100vh;
+    transform: translateX(-100%); transition: transform .22s ease;
+    box-shadow: 0 0 44px rgba(0,0,0,.45);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .scrim { display: block; position: fixed; inset: 0; z-index: 35;
+           background: rgba(9,17,24,.5); }
+
+  .nav a { padding: 10px 10px; font-size: 14px; }   /* bigger tap targets */
+  .sidebar-foot { padding: 14px 16px; }
+
   .main { padding: 14px; }
   .f-3, .f-4, .f-6, .f-8 { grid-column: span 12; }
+
+  /* Stack the page header and let its actions go full-width. */
+  .page-head { flex-direction: column; align-items: stretch; }
+  .page-head .btn { width: 100%; justify-content: center; }
+  .page-head .row-actions { display: flex; width: 100%; }
+  .page-head .row-actions .btn { flex: 1; }
+
+  /* Toolbars stack; controls fill the row; drop the desktop-only spacer. */
+  .toolbar { gap: 10px; }
+  .toolbar > input, .toolbar > select { width: 100%; min-width: 0; }
+  .toolbar .spacer { display: none; }
+
+  /* Comfortable touch targets; 16px inputs stop iOS from zooming on focus. */
+  .btn { padding: 10px 14px; }
+  input, select, textarea { padding: 10px 11px; font-size: 16px; }
+  thead th, tbody td { padding: 10px 10px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+
+  /* Referral/needs-analysis panel pairs go single-column on a phone. */
+  .panel-pair { grid-template-columns: 1fr; }
+  .ref-filters { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

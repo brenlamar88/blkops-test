@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { AppProvider, useApp } from './lib/data'
 import { Field, Text, Banner, Empty } from './components/ui'
@@ -63,9 +63,27 @@ const ADMIN_NAV = ['Admin', [['/territory-map', 'Territory map']]]
 function Shell({ children }) {
   const { profile, memberships, facilityId, facility, role, isManager, switchFacility } = useApp()
   const nav = isManager ? [...NAV, ADMIN_NAV] : NAV
+  const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
+
+  // Close the drawer whenever the route changes (a nav link was tapped).
+  useEffect(() => { setMenuOpen(false) }, [location.pathname])
+
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <div className="mobile-top">
+        <button className="hamburger" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+               strokeLinecap="round" aria-hidden="true">
+            <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="17" x2="20" y2="17" />
+          </svg>
+        </button>
+        <b>BLACK OPS</b>
+        <span className="mtop-campus">{facility?.name ?? ''}</span>
+      </div>
+      {menuOpen && <div className="scrim" onClick={() => setMenuOpen(false)} />}
+      <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="brand">
           <b>BLACK OPS</b>
           <span>Freedom Behavioral Health</span>

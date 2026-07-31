@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useApp, useQuery, fetchAll, save, remove, today, daysAgo, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
 import QuickAddContact from '../components/QuickAddContact'
+import CompanyPicker from '../components/CompanyPicker'
 import { fmtDate, fmtTime, personName } from '../lib/format'
 import { UNIT_TYPES, CONTACT_METHODS, ACTIVITY_TYPES } from '../lib/enums'
 
@@ -107,10 +108,6 @@ export function ActivityForm() {
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  const { rows: companies } = useQuery(
-    () => fetchAll(() => supabase.from('companies').select('id,name,city').eq('active', true)
-      .is('merged_into_id', null).order('name').order('id')), [])
-
   const { rows: contacts, refresh: refreshContacts } = useQuery(
     () => v.company_id
       ? supabase.from('contacts').select('id,first_name,last_name')
@@ -126,15 +123,15 @@ export function ActivityForm() {
 
   const set = (k) => (val) => setV((s) => {
     const n = { ...s, [k]: val }
-    if (k === 'company_id') {
-      n.contact_id = null
-      // Fill territory from the company's city; the rep can still change it.
-      const c = companies.find((x) => x.id === val)
-      n.territory_id = territoryForCity(lookups.territoryCities, c?.city)
-    }
     if (k === 'scheduled_next_visit' && !val) n.next_visit_date = null
     return n
   })
+
+  // Picking a company clears the contact and fills territory from its city.
+  const pickCompany = (c) => setV((s) => ({
+    ...s, company_id: c?.id ?? null, contact_id: null,
+    territory_id: territoryForCity(lookups.territoryCities, c?.city),
+  }))
 
   const submit = async (e) => {
     e.preventDefault()
@@ -175,7 +172,7 @@ export function ActivityForm() {
                     options={lookups.territories ?? []} />
           </Field>
           <Field label="Company" span={7}>
-            <Select value={v.company_id} onChange={set('company_id')} options={companies} />
+            <CompanyPicker value={v.company_id} onChange={pickCompany} />
           </Field>
           <Field label="Contact" span={5}
                  hint={!v.company_id ? 'Pick a company to see its contacts.' : undefined}>

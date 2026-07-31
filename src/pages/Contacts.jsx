@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useApp, useQuery, fetchAll, save, remove, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, TerritoryChip } from '../components/ui'
+import CompanyPicker from '../components/CompanyPicker'
 
 const SEL = `*, role:contact_roles(id,name), company:companies(id,name,city),
   t1:character_traits!contacts_character_trait_1_id_fkey(name),
@@ -95,10 +96,6 @@ export function ContactForm() {
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  const { rows: companies } = useQuery(
-    () => fetchAll(() => supabase.from('companies').select('id,name').eq('active', true)
-      .is('merged_into_id', null).order('name').order('id')), [])
-
   useQuery(async () => {
     if (!id) return null
     const r = await supabase.from('contacts').select('*').eq('id', id).single()
@@ -132,7 +129,7 @@ export function ContactForm() {
         <div className="section-label" style={{ marginTop: 0 }}>Who and where</div>
         <div className="grid">
           <Field label="Company" span={8} required>
-            <Select value={v.company_id} onChange={set('company_id')} options={companies} />
+            <CompanyPicker value={v.company_id} onChange={(c) => set('company_id')(c?.id ?? null)} />
           </Field>
           <Field label="Role" span={4}>
             <Select value={v.role_id} onChange={set('role_id')} options={lookups.contactRoles ?? []} />

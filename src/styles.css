@@ -335,6 +335,41 @@ table.mini .idx { color: var(--ink-3); margin-right: 8px; font-variant-numeric: 
 .auth-card .field { margin-bottom: 12px; }
 .auth-card .btn { width: 100%; justify-content: center; }
 
+/* ---------------- Company search picker ---------------- */
+
+.cpick { position: relative; }
+.cpick-selected {
+  display: flex; align-items: center; gap: 8px; justify-content: space-between;
+  border: 1px solid var(--rule); border-radius: var(--r);
+  padding: 7px 10px; background: var(--surface); min-height: 38px;
+}
+.cpick-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cpick-clear {
+  width: auto; flex: 0 0 auto; background: none; border: 0; padding: 2px 4px;
+  color: var(--accent); font: 500 12px var(--sans); cursor: pointer;
+}
+.cpick-clear:hover { text-decoration: underline; }
+
+.cpick-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 25;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r);
+  box-shadow: var(--shadow); max-height: 264px; overflow-y: auto;
+}
+.cpick-item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  width: 100%; text-align: left; background: none; border: 0;
+  border-bottom: 1px solid var(--rule-soft); padding: 9px 11px;
+  cursor: pointer; min-height: 44px;
+}
+.cpick-item:last-child { border-bottom: 0; }
+.cpick-item:hover, .cpick-item:focus { background: #f7f9fb; }
+.cpick-clearrow { min-height: 34px; }
+.cpick-item-name { font-size: 13px; color: var(--ink); }
+.cpick-item-sub {
+  font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em;
+}
+.cpick-msg { padding: 12px; font-size: 12px; color: var(--ink-3); }
+
 /* ---------------- Modal ---------------- */
 
 .modal-scrim {
@@ -419,7 +454,7 @@ tbody td .btn { text-transform: none; }
   .sidebar-foot { padding: 14px 16px; }
 
   .main { padding: 14px; }
-  .f-3, .f-4, .f-6, .f-8 { grid-column: span 12; }
+  .f-3, .f-4, .f-5, .f-6, .f-7, .f-8 { grid-column: span 12; }
 
   /* Stack the page header and let its actions go full-width. */
   .page-head { flex-direction: column; align-items: stretch; }

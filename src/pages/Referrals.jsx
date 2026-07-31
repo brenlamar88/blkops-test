@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useApp, useQuery, fetchAll, save, today, daysAgo, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip, TerritoryChip } from '../components/ui'
 import QuickAddContact from '../components/QuickAddContact'
+import CompanyPicker from '../components/CompanyPicker'
 import { fmtDate, personName } from '../lib/format'
 import { UNIT_TYPES, ADMISSION_STATUSES } from '../lib/enums'
 
@@ -116,10 +117,6 @@ export function ReferralForm() {
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  const { rows: companies } = useQuery(
-    () => fetchAll(() => supabase.from('companies').select('id,name,city,category_id,subcategory_id')
-      .eq('active', true).is('merged_into_id', null).order('name').order('id')), [])
-
   const { rows: contacts, refresh: refreshContacts } = useQuery(
     () => v.prospect_company_id
       ? supabase.from('contacts').select('id,first_name,last_name')
@@ -135,18 +132,19 @@ export function ReferralForm() {
 
   const set = (k) => (val) => setV((s) => {
     const n = { ...s, [k]: val }
-    if (k === 'prospect_company_id') {
-      const c = companies.find((x) => x.id === val)
-      if (c) Object.assign(n, { referral_contact_id: null,
-        category_id: c.category_id, subcategory_id: c.subcategory_id,
-        // Territory fills in from the referring company's city; still editable.
-        territory_id: territoryForCity(lookups.territoryCities, c.city) })
-    }
     if (k === 'category_id') n.subcategory_id = null
     if (k === 'admission_status' && val !== 'Denial') n.denial_reason_id = null
     if (k === 'prescreening_performed' && !val) n.prescreen_location_id = null
     return n
   })
+
+  // Picking the referring company fills category, subcategory and territory
+  // from it, and clears the contact so it re-scopes to the new company.
+  const pickCompany = (c) => setV((s) => ({
+    ...s, prospect_company_id: c?.id ?? null, referral_contact_id: null,
+    category_id: c?.category_id ?? null, subcategory_id: c?.subcategory_id ?? null,
+    territory_id: territoryForCity(lookups.territoryCities, c?.city),
+  }))
 
   const subs = useMemo(
     () => (lookups.subcategories ?? []).filter((s) => s.category_id === v.category_id),
@@ -193,7 +191,7 @@ export function ReferralForm() {
         <div className="section-label">Source</div>
         <div className="grid">
           <Field label="Referring company" span={7} hint="Category fills in from the company.">
-            <Select value={v.prospect_company_id} onChange={set('prospect_company_id')} options={companies} />
+            <CompanyPicker value={v.prospect_company_id} onChange={pickCompany} />
           </Field>
           <Field label="Referring contact" span={5}>
             <Select value={v.referral_contact_id} onChange={set('referral_contact_id')}

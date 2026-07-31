@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useApp, useQuery, save, remove, today, daysAgo, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
+import QuickAddContact from '../components/QuickAddContact'
 import { fmtDate, fmtTime, personName } from '../lib/format'
 import { UNIT_TYPES, CONTACT_METHODS, ACTIVITY_TYPES } from '../lib/enums'
 
@@ -108,7 +109,7 @@ export function ActivityForm() {
     () => supabase.from('companies').select('id,name,city').eq('active', true)
       .is('merged_into_id', null).order('name').limit(1000), [])
 
-  const { rows: contacts } = useQuery(
+  const { rows: contacts, refresh: refreshContacts } = useQuery(
     () => v.company_id
       ? supabase.from('contacts').select('id,first_name,last_name')
           .eq('company_id', v.company_id).eq('active', true).order('last_name')
@@ -178,6 +179,8 @@ export function ActivityForm() {
                  hint={!v.company_id ? 'Pick a company to see its contacts.' : undefined}>
             <Select value={v.contact_id} onChange={set('contact_id')} disabled={!v.company_id}
                     options={(contacts ?? []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])} />
+            <QuickAddContact companyId={v.company_id}
+              onAdded={(c) => { refreshContacts(); setV((s) => ({ ...s, contact_id: c.id })) }} />
           </Field>
         </div>
 

@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useApp, useQuery, save, today, daysAgo, territoryForCity } from '../lib/data'
-import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
+import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip, TerritoryChip } from '../components/ui'
+import QuickAddContact from '../components/QuickAddContact'
 import { fmtDate, personName } from '../lib/format'
 import { UNIT_TYPES, ADMISSION_STATUSES } from '../lib/enums'
 
@@ -64,6 +65,7 @@ export function ReferralList() {
 
       <div className="card">
         <DataTable rows={rows} loading={loading} error={error}
+          territoryOf={(r) => r.territory?.name}
           empty={<Empty title="No referrals in this range"
                         action={<Link className="btn btn-primary" to="/referrals/new">Log referral</Link>} />}
           columns={[
@@ -73,6 +75,8 @@ export function ReferralList() {
                 {`${r.patient_first_name ?? '?'} ${r.patient_last_initial ?? '?'}.`}</span> },
             { key: 'company', label: 'Referred by', sortValue: (r) => r.company?.name,
               render: (r) => r.company ? <Link to={`/companies/${r.company.id}`}>{r.company.name}</Link> : '—' },
+            { key: 'territory', label: 'Territory', sortable: false,
+              render: (r) => <TerritoryChip name={r.territory?.name} /> },
             { key: 'admission_status', label: 'Outcome',
               render: (r) => r.admission_status
                 ? <Chip kind={r.admission_status === 'Admit' ? 'ok'
@@ -114,7 +118,7 @@ export function ReferralForm() {
     () => supabase.from('companies').select('id,name,city,category_id,subcategory_id')
       .eq('active', true).is('merged_into_id', null).order('name').limit(1000), [])
 
-  const { rows: contacts } = useQuery(
+  const { rows: contacts, refresh: refreshContacts } = useQuery(
     () => v.prospect_company_id
       ? supabase.from('contacts').select('id,first_name,last_name')
           .eq('company_id', v.prospect_company_id).eq('active', true).order('last_name')
@@ -193,6 +197,8 @@ export function ReferralForm() {
             <Select value={v.referral_contact_id} onChange={set('referral_contact_id')}
                     disabled={!v.prospect_company_id}
                     options={(contacts ?? []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])} />
+            <QuickAddContact companyId={v.prospect_company_id}
+              onAdded={(c) => { refreshContacts(); setV((s) => ({ ...s, referral_contact_id: c.id })) }} />
           </Field>
           <Field label="Territory" span={4} hint="Fills in from the referring company's city.">
             <Select value={v.territory_id} onChange={set('territory_id')} options={lookups.territories ?? []} />

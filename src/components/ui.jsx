@@ -1,5 +1,25 @@
 import { useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { territoryClass } from '../lib/format'
+
+/* ---------------- Modal ----------------
+   Portaled to <body> so it escapes any surrounding <form>: the modal can
+   carry its own form, and Enter inside it never submits the page behind it.
+   A bottom sheet on a phone, a centered card on desktop. */
+export function Modal({ title, onClose, children }) {
+  return createPortal(
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2>{title}</h2>
+          <button type="button" className="modal-x" onClick={onClose} aria-label="Close">×</button>
+        </div>
+        <div className="modal-body">{children}</div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
 
 /* ---------------- Form fields ---------------- */
 

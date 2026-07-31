@@ -335,6 +335,34 @@ table.mini .idx { color: var(--ink-3); margin-right: 8px; font-variant-numeric: 
 .auth-card .field { margin-bottom: 12px; }
 .auth-card .btn { width: 100%; justify-content: center; }
 
+/* ---------------- Modal ---------------- */
+
+.modal-scrim {
+  position: fixed; inset: 0; z-index: 60; background: rgba(9,17,24,.5);
+  display: grid; place-items: center; padding: 20px;
+}
+.modal {
+  background: var(--surface); border-radius: 5px; width: 100%; max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35); max-height: 90vh; overflow-y: auto;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--rule-soft);
+  position: sticky; top: 0; background: var(--surface);
+}
+.modal-x {
+  width: auto; background: none; border: 0; padding: 0 4px; cursor: pointer;
+  font-size: 22px; line-height: 1; color: var(--ink-3);
+}
+.modal-x:hover { color: var(--ink); }
+.modal-body { padding: 16px; }
+.modal-body .form-actions { margin-top: 16px; }
+
+@media (max-width: 640px) {
+  .modal-scrim { align-items: flex-end; padding: 0; }
+  .modal { max-width: 100%; border-radius: 12px 12px 0 0; max-height: 92vh; }
+}
+
 /* ---------------- All-caps data ----------------
    Show values in caps like the old Gravity Forms views. Non-destructive:
    stored values are unchanged and territory/city matching stays

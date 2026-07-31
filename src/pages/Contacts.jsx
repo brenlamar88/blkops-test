@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, save, remove } from '../lib/data'
-import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading } from '../components/ui'
+import { useApp, useQuery, save, remove, territoryForCity } from '../lib/data'
+import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, TerritoryChip } from '../components/ui'
 
-const SEL = `*, role:contact_roles(id,name), company:companies(id,name),
+const SEL = `*, role:contact_roles(id,name), company:companies(id,name,city),
   t1:character_traits!contacts_character_trait_1_id_fkey(name),
   t2:character_traits!contacts_character_trait_2_id_fkey(name)`
 
@@ -28,6 +28,11 @@ export function ContactList() {
     try { await remove('contacts', r.id); refresh() } catch (e) { alert(e.message) }
   }
 
+  // Territory follows the contact's company: company has a city, the campus
+  // maps the city to a territory. Same resolution as everywhere else.
+  const terrName = (tid) => (lookups.territories ?? []).find((t) => t.id === tid)?.name
+  const contactTerr = (r) => terrName(territoryForCity(lookups.territoryCities, r.company?.city))
+
   return (
     <>
       <div className="page-head">
@@ -49,7 +54,7 @@ export function ContactList() {
       </div>
 
       <div className="card">
-        <DataTable rows={rows} loading={loading} error={error}
+        <DataTable rows={rows} loading={loading} error={error} territoryOf={contactTerr}
           empty={<Empty title="No contacts yet"
                         action={<Link className="btn btn-primary" to="/contacts/new">Add contact</Link>} />}
           columns={[
@@ -57,6 +62,8 @@ export function ContactList() {
               render: (r) => `${r.first_name} ${r.last_name}` },
             { key: 'company', label: 'Company', sortValue: (r) => r.company?.name,
               render: (r) => r.company ? <Link to={`/companies/${r.company.id}`}>{r.company.name}</Link> : '—' },
+            { key: 'territory', label: 'Territory', sortable: false,
+              render: (r) => <TerritoryChip name={contactTerr(r)} /> },
             { key: 'role', label: 'Role', render: (r) => r.role?.name ?? '—' },
             { key: 'traits', label: 'Traits', sortable: false,
               render: (r) => [r.t1?.name, r.t2?.name].filter(Boolean).join(' / ') || '—' },

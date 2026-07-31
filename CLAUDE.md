@@ -64,7 +64,10 @@ looking.
 - **`companies` and `contacts` are a shared registry** — one row per real
   account per organization. `facility_companies` records which campus works
   which account and under which of its own territories. Territory is
-  deliberately *not* on `companies`; that was a bug.
+  deliberately *not* on `companies`; that was a bug. Adding a company runs
+  `find_company_duplicates` (pg_trgm name similarity + same address & city) as a
+  **soft** warning the rep can override — many providers legitimately share one
+  hospital address; `companies.merged_into_id` collapses any that slip through.
 - **Company-derived fields are never copied** onto transactional rows. Read
   city, address and phone through `needs_analysis_full` and `referrals_full`.
 - **`needs_analysis` is one row per company**, enforced by a unique constraint.

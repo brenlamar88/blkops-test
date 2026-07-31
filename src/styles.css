@@ -398,6 +398,19 @@ table.mini .idx { color: var(--ink-3); margin-right: 8px; font-variant-numeric: 
   .modal { max-width: 100%; border-radius: 12px 12px 0 0; max-height: 92vh; }
 }
 
+/* ---------------- Duplicate warning list ---------------- */
+
+.dupe-list { display: grid; gap: 8px; margin: 4px 0 4px; }
+.dupe {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 11px; border: 1px solid var(--rule); border-radius: var(--r);
+  background: var(--surface); text-decoration: none; color: var(--ink);
+}
+.dupe:hover { background: #f7f9fb; text-decoration: none; }
+.dupe-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dupe-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dupe-sub { font-size: 11px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ---------------- All-caps data ----------------
    Show values in caps like the old Gravity Forms views. Non-destructive:
    stored values are unchanged and territory/city matching stays

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useApp, useQuery, fetchAll, save, territoryForCity } from '../lib/data'
-import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, Chip, TerritoryChip } from '../components/ui'
+import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, Chip, TerritoryChip, Modal } from '../components/ui'
 import { fmtDate } from '../lib/format'
 
 const SEL = `*, category:categories(id,name), subcategory:subcategories(id,name)`
@@ -87,6 +87,7 @@ export function CompanyForm() {
   const [loaded, setLoaded] = useState(!id)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [dupes, setDupes] = useState(null)   // possible duplicates awaiting confirmation
 
   useQuery(async () => {
     if (!id) return null
@@ -103,10 +104,8 @@ export function CompanyForm() {
     () => (lookups.subcategories ?? []).filter((s) => s.category_id === v.category_id),
     [lookups.subcategories, v.category_id])
 
-  const submit = async (e) => {
-    e.preventDefault()
-    if (!v.name?.trim()) return setError('Company name is required.')
-    setBusy(true); setError(null)
+  const doSave = async () => {
+    setBusy(true); setError(null); setDupes(null)
     try {
       const org = (lookups.categories ?? [])[0]?.organization_id
       const payload = { ...v, created_by: v.created_by ?? profile.id,
@@ -121,6 +120,22 @@ export function CompanyForm() {
       }
       nav(`/companies/${saved.id}`)
     } catch (err) { setError(err.message); setBusy(false) }
+  }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (!v.name?.trim()) return setError('Company name is required.')
+    // Warn about likely duplicates before creating a brand-new company. It's a
+    // soft check: same address can be legitimate (many providers, one hospital),
+    // so the rep confirms. If the RPC isn't available, saving just proceeds.
+    if (!id) {
+      setBusy(true); setError(null)
+      const { data: matches } = await supabase.rpc('find_company_duplicates',
+        { p_name: v.name.trim(), p_address: v.address_line1, p_city: v.city })
+      setBusy(false)
+      if (matches && matches.length) { setDupes(matches); return }
+    }
+    doSave()
   }
 
   if (!loaded) return <Loading rows={7} />
@@ -168,6 +183,37 @@ export function CompanyForm() {
           <button type="button" className="btn" onClick={() => nav(-1)}>Cancel</button>
         </div>
       </div></div>
+
+      {dupes && (
+        <Modal title="Possible duplicate" onClose={() => setDupes(null)}>
+          <p style={{ marginTop: 0, color: 'var(--ink-2)', fontSize: 13 }}>
+            This looks like it may already exist. Several providers can share one
+            address (a hospital, a clinic), so this is only a heads-up — but please
+            check these first:
+          </p>
+          <div className="dupe-list">
+            {dupes.map((d) => (
+              <a key={d.id} className="dupe" href={`/companies/${d.id}`} target="_blank" rel="noreferrer">
+                <div className="dupe-main">
+                  <span className="dupe-name caps">{d.name}</span>
+                  <span className="dupe-sub caps">
+                    {[d.address_line1, d.city].filter(Boolean).join(' · ') || 'no address on file'}
+                  </span>
+                </div>
+                {d.same_address
+                  ? <Chip kind="bad">Same address</Chip>
+                  : <Chip>{Math.round((d.score ?? 0) * 100)}% name match</Chip>}
+              </a>
+            ))}
+          </div>
+          <div className="form-actions">
+            <button type="button" className="btn btn-primary" onClick={doSave} disabled={busy}>
+              {busy ? 'Saving…' : 'Add anyway'}
+            </button>
+            <button type="button" className="btn" onClick={() => setDupes(null)}>Go back</button>
+          </div>
+        </Modal>
+      )}
     </form>
   )
 }

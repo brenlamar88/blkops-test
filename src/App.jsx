@@ -15,6 +15,7 @@ import ActivityDashboard from './pages/ActivityDashboard'
 import TerritoryMap from './pages/TerritoryMap'
 import Users from './pages/Users'
 import Campuses from './pages/Campuses'
+import TouchAnalysis from './pages/TouchAnalysis'
 import Reports from './pages/Reports'
 import { MENU, ADMIN_MENU, ADMIN_ONLY } from './lib/menu'
 
@@ -177,6 +178,7 @@ function Gate() {
           <Route path="/territory-map" element={<TerritoryMap />} />
           <Route path="/users" element={<Users />} />
           <Route path="/campuses" element={<Campuses />} />
+          <Route path="/touch-analysis" element={<TouchAnalysis />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -7,7 +7,8 @@ export const MENU = [
   ['Daily work', [['/', 'Dashboard'], ['/activities', 'Activities'], ['/referrals', 'Referrals']]],
   ['Accounts', [['/companies', 'Companies'], ['/contacts', 'Contacts'],
                 ['/needs-analysis', 'Needs analysis']]],
-  ['Reporting', [['/activity-dashboard', 'Activity dashboard'], ['/reports', 'Reports']]],
+  ['Reporting', [['/activity-dashboard', 'Activity dashboard'],
+                 ['/touch-analysis', 'Touch analysis'], ['/reports', 'Reports']]],
 ]
 
 // Shown only to managers/admins; Users and Campuses are gated to admins.

@@ -398,6 +398,19 @@ table.mini .idx { color: var(--ink-3); margin-right: 8px; font-variant-numeric: 
   .modal { max-width: 100%; border-radius: 12px 12px 0 0; max-height: 92vh; }
 }
 
+/* ---------------- Segmented toggle + pivot table ---------------- */
+
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; }
+.seg button {
+  width: auto; background: var(--surface); border: 0; border-right: 1px solid var(--rule);
+  padding: 6px 14px; font: 500 13px var(--sans); color: var(--ink-2); cursor: pointer;
+}
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--accent); color: #fff; }
+
+table.pivot td.tot { font-weight: 600; }
+table.pivot tr.pivot-total td { border-top: 2px solid var(--rule); font-weight: 600; background: #f7f9fb; }
+
 /* ---------------- Duplicate warning list ---------------- */
 
 .dupe-list { display: grid; gap: 8px; margin: 4px 0 4px; }

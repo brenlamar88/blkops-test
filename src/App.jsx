@@ -11,6 +11,7 @@ import { ContactList, ContactForm } from './pages/Contacts'
 import { ActivityList, ActivityForm } from './pages/Activities'
 import { ReferralList, ReferralForm } from './pages/Referrals'
 import { NaList, NaForm, NaHistory } from './pages/NeedsAnalysis'
+import ActivityDashboard from './pages/ActivityDashboard'
 import Reports from './pages/Reports'
 
 function SignIn() {
@@ -52,7 +53,7 @@ const NAV = [
   ['Daily work', [['/', 'Dashboard'], ['/activities', 'Activities'], ['/referrals', 'Referrals']]],
   ['Accounts', [['/companies', 'Companies'], ['/contacts', 'Contacts'],
                 ['/needs-analysis', 'Needs analysis']]],
-  ['Reporting', [['/reports', 'Reports']]],
+  ['Reporting', [['/activity-dashboard', 'Activity dashboard'], ['/reports', 'Reports']]],
 ]
 
 function Shell({ children }) {
@@ -147,6 +148,7 @@ function Gate() {
           <Route path="/needs-analysis" element={<NaList />} />
           <Route path="/needs-analysis/company/:companyId" element={<NaForm />} />
           <Route path="/needs-analysis/:id/history" element={<NaHistory />} />
+          <Route path="/activity-dashboard" element={<ActivityDashboard />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

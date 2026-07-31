@@ -134,9 +134,12 @@ export function DataTable({ columns, rows, loading, error, empty, territoryOf })
         </thead>
         <tbody>
           {sorted.map((r, i) => (
-            <tr key={r.id ?? i}>
+            // Territory class also on the row so the card carries the colored
+            // edge when the table collapses to stacked cards on a phone.
+            <tr key={r.id ?? i}
+                className={territoryOf ? territoryClass(territoryOf(r)) : undefined}>
               {columns.map((c, ci) => (
-                <td key={c.key}
+                <td key={c.key} data-label={c.label || ''}
                     className={[
                       ci === 0 && territoryOf ? `rail ${territoryClass(territoryOf(r))}` : '',
                       c.align === 'right' ? 'num' : '',

@@ -12,6 +12,7 @@ import { ActivityList, ActivityForm } from './pages/Activities'
 import { ReferralList, ReferralForm } from './pages/Referrals'
 import { NaList, NaForm, NaHistory } from './pages/NeedsAnalysis'
 import ActivityDashboard from './pages/ActivityDashboard'
+import TerritoryMap from './pages/TerritoryMap'
 import Reports from './pages/Reports'
 
 function SignIn() {
@@ -56,8 +57,12 @@ const NAV = [
   ['Reporting', [['/activity-dashboard', 'Activity dashboard'], ['/reports', 'Reports']]],
 ]
 
+// Shown only to managers and admins.
+const ADMIN_NAV = ['Admin', [['/territory-map', 'Territory map']]]
+
 function Shell({ children }) {
-  const { profile, memberships, facilityId, facility, role, switchFacility } = useApp()
+  const { profile, memberships, facilityId, facility, role, isManager, switchFacility } = useApp()
+  const nav = isManager ? [...NAV, ADMIN_NAV] : NAV
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -79,7 +84,7 @@ function Shell({ children }) {
         </div>
 
         <nav className="nav">
-          {NAV.map(([group, items]) => (
+          {nav.map(([group, items]) => (
             <div className="nav-group" key={group}>
               <p>{group}</p>
               {items.map(([to, label]) => (
@@ -149,6 +154,7 @@ function Gate() {
           <Route path="/needs-analysis/company/:companyId" element={<NaForm />} />
           <Route path="/needs-analysis/:id/history" element={<NaHistory />} />
           <Route path="/activity-dashboard" element={<ActivityDashboard />} />
+          <Route path="/territory-map" element={<TerritoryMap />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

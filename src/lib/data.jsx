@@ -80,6 +80,13 @@ export function AppProvider({ children }) {
       ? (await supabase.from('territories').select('*')
           .eq('facility_id', facilityId).eq('active', true).order('sort_order')).data ?? []
       : []
+    // City → territory map for the current campus, so the activity and referral
+    // forms can fill territory from the selected company's city (the database
+    // does the same on write; this just shows it before the save).
+    out.territoryCities = facilityId
+      ? (await supabase.from('territory_cities').select('city, territory_id')
+          .eq('facility_id', facilityId)).data ?? []
+      : []
     out.users = (await supabase.from('profiles')
       .select('id, first_name, last_name, email').eq('active', true)).data ?? []
     setLookups(out)
@@ -144,6 +151,15 @@ export async function save(table, id, values) {
 export async function remove(table, id) {
   const { error } = await supabase.from(table).delete().eq('id', id)
   if (error) throw new Error(error.message)
+}
+
+// Resolve a company city to its mapped territory for the current campus,
+// matching case- and whitespace-insensitively like territory_for_city() in SQL.
+export function territoryForCity(territoryCities, city) {
+  const key = (city ?? '').trim().toLowerCase()
+  if (!key) return null
+  return (territoryCities ?? []).find((m) => (m.city ?? '').trim().toLowerCase() === key)
+    ?.territory_id ?? null
 }
 
 export const today = () => new Date().toISOString().slice(0, 10)

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, save, today, daysAgo } from '../lib/data'
+import { useApp, useQuery, save, today, daysAgo, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
 import { fmtDate, personName } from '../lib/format'
 import { UNIT_TYPES, ADMISSION_STATUSES } from '../lib/enums'
@@ -111,7 +111,7 @@ export function ReferralForm() {
   const [busy, setBusy] = useState(false)
 
   const { rows: companies } = useQuery(
-    () => supabase.from('companies').select('id,name,category_id,subcategory_id')
+    () => supabase.from('companies').select('id,name,city,category_id,subcategory_id')
       .eq('active', true).is('merged_into_id', null).order('name').limit(1000), [])
 
   const { rows: contacts } = useQuery(
@@ -132,7 +132,9 @@ export function ReferralForm() {
     if (k === 'prospect_company_id') {
       const c = companies.find((x) => x.id === val)
       if (c) Object.assign(n, { referral_contact_id: null,
-        category_id: c.category_id, subcategory_id: c.subcategory_id })
+        category_id: c.category_id, subcategory_id: c.subcategory_id,
+        // Territory fills in from the referring company's city; still editable.
+        territory_id: territoryForCity(lookups.territoryCities, c.city) })
     }
     if (k === 'category_id') n.subcategory_id = null
     if (k === 'admission_status' && val !== 'Denial') n.denial_reason_id = null
@@ -192,7 +194,7 @@ export function ReferralForm() {
                     disabled={!v.prospect_company_id}
                     options={(contacts ?? []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])} />
           </Field>
-          <Field label="Territory" span={4}>
+          <Field label="Territory" span={4} hint="Fills in from the referring company's city.">
             <Select value={v.territory_id} onChange={set('territory_id')} options={lookups.territories ?? []} />
           </Field>
           <Field label="Category" span={4}>

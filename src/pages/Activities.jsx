@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, save, remove, today, daysAgo } from '../lib/data'
+import { useApp, useQuery, save, remove, today, daysAgo, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip } from '../components/ui'
 import { fmtDate, fmtTime, personName } from '../lib/format'
 import { UNIT_TYPES, CONTACT_METHODS, ACTIVITY_TYPES } from '../lib/enums'
@@ -105,7 +105,7 @@ export function ActivityForm() {
   const [busy, setBusy] = useState(false)
 
   const { rows: companies } = useQuery(
-    () => supabase.from('companies').select('id,name').eq('active', true)
+    () => supabase.from('companies').select('id,name,city').eq('active', true)
       .is('merged_into_id', null).order('name').limit(1000), [])
 
   const { rows: contacts } = useQuery(
@@ -121,11 +121,17 @@ export function ActivityForm() {
     return r
   }, [id])
 
-  const set = (k) => (val) => setV((s) => ({
-    ...s, [k]: val,
-    ...(k === 'company_id' ? { contact_id: null } : {}),
-    ...(k === 'scheduled_next_visit' && !val ? { next_visit_date: null } : {}),
-  }))
+  const set = (k) => (val) => setV((s) => {
+    const n = { ...s, [k]: val }
+    if (k === 'company_id') {
+      n.contact_id = null
+      // Fill territory from the company's city; the rep can still change it.
+      const c = companies.find((x) => x.id === val)
+      n.territory_id = territoryForCity(lookups.territoryCities, c?.city)
+    }
+    if (k === 'scheduled_next_visit' && !val) n.next_visit_date = null
+    return n
+  })
 
   const submit = async (e) => {
     e.preventDefault()
@@ -161,7 +167,7 @@ export function ActivityForm() {
           <Field label="Unit type" span={3}>
             <Select value={v.unit_type} onChange={set('unit_type')} options={UNIT_TYPES} />
           </Field>
-          <Field label="Territory" span={3}>
+          <Field label="Territory" span={3} hint="Fills in from the company's city.">
             <Select value={v.territory_id} onChange={set('territory_id')}
                     options={lookups.territories ?? []} />
           </Field>

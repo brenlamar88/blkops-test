@@ -37,6 +37,16 @@ looking.
 - **Territories belong to a facility.** Monroe's "Red" is not Lake Charles's
   "Red". Composite FKs on `(territory_id, facility_id)` make the database
   reject cross-facility references.
+- **Territory is assigned by city, per facility.** `territory_cities` maps each
+  city a campus works to one of its own territories (unique per facility, matched
+  case/whitespace-insensitively). `territory_for_city()` resolves it, and a
+  `before insert/update` trigger (`fill_territory_from_city`) stamps `territory_id`
+  on `daily_activities`, `referrals` and `facility_companies` **only when it is
+  left blank** — a rep's explicit choice always wins. Re-mapping a city changes
+  future auto-fills only; already-logged rows keep their stamped territory. This
+  is *why* territory still isn't a column on the shared `companies` row. Edit the
+  map in-app under **Admin → Territory map** (admin-only, RLS `tc_write`); the
+  forms prefill from it client-side via `territoryForCity` in `data.jsx`.
 - **`companies` and `contacts` are a shared registry** — one row per real
   account per organization. `facility_companies` records which campus works
   which account and under which of its own territories. Territory is

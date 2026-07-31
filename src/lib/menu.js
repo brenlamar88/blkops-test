@@ -10,8 +10,12 @@ export const MENU = [
   ['Reporting', [['/activity-dashboard', 'Activity dashboard'], ['/reports', 'Reports']]],
 ]
 
-// Shown only to managers/admins; Users itself is gated to admins in the nav.
-export const ADMIN_MENU = ['Admin', [['/territory-map', 'Territory map'], ['/users', 'Users']]]
+// Shown only to managers/admins; Users and Campuses are gated to admins.
+export const ADMIN_MENU = ['Admin', [['/territory-map', 'Territory map'],
+                                     ['/users', 'Users'], ['/campuses', 'Campuses']]]
+
+// Admin-only nav items (managers see the rest of the Admin group but not these).
+export const ADMIN_ONLY = ['/users', '/campuses']
 
 // Dashboard is the landing page and never hideable, so it is not a toggle.
 export const HIDEABLE_ITEMS = [...MENU, ADMIN_MENU]

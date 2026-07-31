@@ -39,7 +39,11 @@ looking.
   RLS `is_admin_at(facility_id)` — a facility admin only touches their own
   campuses. Creating a brand-new login needs the service key, so it goes through
   the `create-user` Edge Function (`supabase/functions/`), which verifies the
-  caller is an admin at the target campus before minting the account.
+  caller is an admin at the target campus before minting the account. New
+  campuses are added under **Admin → Campuses** (org-admin only); the
+  `SECURITY DEFINER` trigger `seed_new_facility` gives each new facility its
+  four territories and makes the creator an admin of it — both otherwise
+  blocked by RLS, since nobody is an admin at a facility that does not yet exist.
 - **Menus are per-user.** `user_menu_visibility` holds one row per hidden menu
   item per user (menu_key = route path; Dashboard `/` is never hideable). The
   nav filters against the current user's rows, edited under Admin → Users. The

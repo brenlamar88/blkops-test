@@ -63,6 +63,20 @@ export function AppProvider({ children }) {
     return () => { dead = true }
   }, [session])
 
+  // Re-read the current user's campus memberships — e.g. after creating a
+  // campus, which makes the creator an admin of it via a DB trigger, so the
+  // new campus appears in the switcher without a full reload.
+  const reloadMemberships = useCallback(async () => {
+    if (!session?.user) return
+    const { data: mems } = await supabase.from('facility_members')
+      .select('facility_id, role, facility:facilities(id, name, slug)')
+      .eq('user_id', session.user.id)
+    const list = (mems ?? []).filter((m) => m.facility)
+      .sort((a, b) => a.facility.name.localeCompare(b.facility.name))
+    setMemberships(list)
+    setFacilityId((fid) => fid ?? list[0]?.facility_id ?? null)
+  }, [session])
+
   const loadLookups = useCallback(async () => {
     if (!session) return
     const tables = {
@@ -112,7 +126,8 @@ export function AppProvider({ children }) {
       facility: current?.facility, role: current?.role,
       isManager: ['manager', 'admin'].includes(current?.role),
       isAdmin: current?.role === 'admin',
-      lookups, menuHidden, loading, switchFacility, reloadLookups: loadLookups,
+      lookups, menuHidden, loading, switchFacility,
+      reloadLookups: loadLookups, reloadMemberships,
     }}>
       {children}
     </Ctx.Provider>

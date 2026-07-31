@@ -14,8 +14,9 @@ import { NaList, NaForm, NaHistory } from './pages/NeedsAnalysis'
 import ActivityDashboard from './pages/ActivityDashboard'
 import TerritoryMap from './pages/TerritoryMap'
 import Users from './pages/Users'
+import Campuses from './pages/Campuses'
 import Reports from './pages/Reports'
-import { MENU, ADMIN_MENU } from './lib/menu'
+import { MENU, ADMIN_MENU, ADMIN_ONLY } from './lib/menu'
 
 function SignIn() {
   const [email, setEmail] = useState('')
@@ -56,8 +57,8 @@ function Shell({ children }) {
   const { profile, memberships, facilityId, facility, role, isManager, isAdmin,
           menuHidden, switchFacility } = useApp()
 
-  // Managers/admins get the Admin group; the Users item is admin-only.
-  const adminItems = ADMIN_MENU[1].filter(([key]) => key !== '/users' || isAdmin)
+  // Managers/admins get the Admin group; Users and Campuses are admin-only.
+  const adminItems = ADMIN_MENU[1].filter(([key]) => isAdmin || !ADMIN_ONLY.includes(key))
   const groups = isManager ? [...MENU, ['Admin', adminItems]] : MENU
   // Apply this user's hidden menu items (Dashboard always stays visible).
   const nav = groups
@@ -175,6 +176,7 @@ function Gate() {
           <Route path="/activity-dashboard" element={<ActivityDashboard />} />
           <Route path="/territory-map" element={<TerritoryMap />} />
           <Route path="/users" element={<Users />} />
+          <Route path="/campuses" element={<Campuses />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

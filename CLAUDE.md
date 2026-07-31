@@ -33,7 +33,17 @@ looking.
 ## Schema shape
 
 - `organizations` → `facilities` (10 campuses) → `facility_members`. Role lives
-  on the membership, so a rep at one campus can be a manager at another.
+  on the membership, so a rep at one campus can be a manager at another. A user
+  is assigned to many campuses by having many `facility_members` rows; the
+  **Admin → Users** screen manages those (add/remove campus, set role), gated by
+  RLS `is_admin_at(facility_id)` — a facility admin only touches their own
+  campuses. Creating a brand-new login needs the service key, so it goes through
+  the `create-user` Edge Function (`supabase/functions/`), which verifies the
+  caller is an admin at the target campus before minting the account.
+- **Menus are per-user.** `user_menu_visibility` holds one row per hidden menu
+  item per user (menu_key = route path; Dashboard `/` is never hideable). The
+  nav filters against the current user's rows, edited under Admin → Users. The
+  menu list lives once in `src/lib/menu.js`, shared by the nav and the toggles.
 - **Territories belong to a facility.** Monroe's "Red" is not Lake Charles's
   "Red". Composite FKs on `(territory_id, facility_id)` make the database
   reject cross-facility references.

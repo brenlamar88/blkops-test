@@ -13,7 +13,9 @@ import { ReferralList, ReferralForm } from './pages/Referrals'
 import { NaList, NaForm, NaHistory } from './pages/NeedsAnalysis'
 import ActivityDashboard from './pages/ActivityDashboard'
 import TerritoryMap from './pages/TerritoryMap'
+import Users from './pages/Users'
 import Reports from './pages/Reports'
+import { MENU, ADMIN_MENU } from './lib/menu'
 
 function SignIn() {
   const [email, setEmail] = useState('')
@@ -50,19 +52,18 @@ function SignIn() {
   )
 }
 
-const NAV = [
-  ['Daily work', [['/', 'Dashboard'], ['/activities', 'Activities'], ['/referrals', 'Referrals']]],
-  ['Accounts', [['/companies', 'Companies'], ['/contacts', 'Contacts'],
-                ['/needs-analysis', 'Needs analysis']]],
-  ['Reporting', [['/activity-dashboard', 'Activity dashboard'], ['/reports', 'Reports']]],
-]
-
-// Shown only to managers and admins.
-const ADMIN_NAV = ['Admin', [['/territory-map', 'Territory map']]]
-
 function Shell({ children }) {
-  const { profile, memberships, facilityId, facility, role, isManager, switchFacility } = useApp()
-  const nav = isManager ? [...NAV, ADMIN_NAV] : NAV
+  const { profile, memberships, facilityId, facility, role, isManager, isAdmin,
+          menuHidden, switchFacility } = useApp()
+
+  // Managers/admins get the Admin group; the Users item is admin-only.
+  const adminItems = ADMIN_MENU[1].filter(([key]) => key !== '/users' || isAdmin)
+  const groups = isManager ? [...MENU, ['Admin', adminItems]] : MENU
+  // Apply this user's hidden menu items (Dashboard always stays visible).
+  const nav = groups
+    .map(([group, items]) => [group, items.filter(([key]) => key === '/' || !menuHidden.has(key))])
+    .filter(([, items]) => items.length)
+
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
 
@@ -173,6 +174,7 @@ function Gate() {
           <Route path="/needs-analysis/:id/history" element={<NaHistory />} />
           <Route path="/activity-dashboard" element={<ActivityDashboard />} />
           <Route path="/territory-map" element={<TerritoryMap />} />
+          <Route path="/users" element={<Users />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

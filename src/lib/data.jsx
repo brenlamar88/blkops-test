@@ -21,6 +21,7 @@ export function AppProvider({ children }) {
   const [memberships, setMemberships] = useState([])
   const [facilityId, setFacilityId] = useState(null)
   const [lookups, setLookups] = useState({})
+  const [menuHidden, setMenuHidden] = useState(new Set())
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -53,6 +54,10 @@ export function AppProvider({ children }) {
       const remembered = localStorage.getItem(LAST_FACILITY)
       const pick = list.find((m) => m.facility_id === remembered) ?? list[0]
       setFacilityId(pick?.facility_id ?? null)
+      // Which menu items this user has had hidden (RLS returns only their own).
+      const { data: mv } = await supabase.from('user_menu_visibility')
+        .select('menu_key').eq('user_id', session.user.id).eq('hidden', true)
+      if (!dead) setMenuHidden(new Set((mv ?? []).map((r) => r.menu_key)))
       setLoading(false)
     })()
     return () => { dead = true }
@@ -107,7 +112,7 @@ export function AppProvider({ children }) {
       facility: current?.facility, role: current?.role,
       isManager: ['manager', 'admin'].includes(current?.role),
       isAdmin: current?.role === 'admin',
-      lookups, loading, switchFacility, reloadLookups: loadLookups,
+      lookups, menuHidden, loading, switchFacility, reloadLookups: loadLookups,
     }}>
       {children}
     </Ctx.Provider>

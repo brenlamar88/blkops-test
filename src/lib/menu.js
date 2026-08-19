@@ -6,7 +6,8 @@
 export const MENU = [
   ['Daily work', [['/', 'Dashboard'], ['/activities', 'Activities'], ['/referrals', 'Referrals']]],
   ['Accounts', [['/companies', 'Companies'], ['/contacts', 'Contacts'],
-                ['/needs-analysis', 'Needs analysis']]],
+                ['/territories', 'Territories'], ['/needs-analysis', 'Needs analysis'],
+                ['/prospectus', 'Prospectus']]],
   ['Reporting', [['/activity-dashboard', 'Activity dashboard'],
                  ['/touch-analysis', 'Touch analysis'], ['/reports', 'Reports']]],
 ]

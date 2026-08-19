@@ -7,6 +7,8 @@ import { personName } from './lib/format'
 
 import Dashboard from './pages/Dashboard'
 import { CompanyList, CompanyForm, CompanyDetail } from './pages/Companies'
+import CompanyTerritories from './pages/CompanyTerritories'
+import Prospectus from './pages/Prospectus'
 import { ContactList, ContactForm } from './pages/Contacts'
 import { ActivityList, ActivityForm } from './pages/Activities'
 import { ReferralList, ReferralForm } from './pages/Referrals'
@@ -162,6 +164,8 @@ function Gate() {
           <Route path="/companies/new" element={<CompanyForm />} />
           <Route path="/companies/:id" element={<CompanyDetail />} />
           <Route path="/companies/:id/edit" element={<CompanyForm />} />
+          <Route path="/territories" element={<CompanyTerritories />} />
+          <Route path="/prospectus" element={<Prospectus />} />
           <Route path="/contacts" element={<ContactList />} />
           <Route path="/contacts/new" element={<ContactForm />} />
           <Route path="/contacts/:id/edit" element={<ContactForm />} />

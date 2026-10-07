@@ -9,7 +9,8 @@ export const MENU = [
                 ['/territories', 'Territories'], ['/needs-analysis', 'Needs analysis'],
                 ['/prospectus', 'Prospectus']]],
   ['Reporting', [['/activity-dashboard', 'Activity dashboard'],
-                 ['/touch-analysis', 'Touch analysis'], ['/reports', 'Reports']]],
+                 ['/touch-analysis', 'Touch analysis'],
+                 ['/referral-scorecard', 'Referral scorecard'], ['/reports', 'Reports']]],
 ]
 
 // Shown only to managers/admins; Users and Campuses are gated to admins.

@@ -21,7 +21,7 @@ export default function ReferralScorecard() {
   const { facilityId, facility, lookups } = useApp()
   const thisYear = new Date().getFullYear()
   const [year, setYear] = useState(thisYear)
-  const [statuses, setStatuses] = useState({ Admit: true, Pending: true, Denial: true })
+  const [statuses, setStatuses] = useState({ Admit: true, Pending: false, Denial: false })
   const [terr, setTerr] = useState('')
   const [cat, setCat] = useState('')
   const [topN, setTopN] = useState('20')

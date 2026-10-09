@@ -125,6 +125,7 @@ export default function Users() {
 
 function UserCard({ user, adminFacs, hidden, onRole, onAdd, onRemove, onMenu }) {
   const [showMenu, setShowMenu] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const has = new Set(user.memberships.map((m) => m.facility_id))
   const addable = adminFacs.filter((f) => !has.has(f.id))
 
@@ -161,9 +162,12 @@ function UserCard({ user, adminFacs, hidden, onRole, onAdd, onRemove, onMenu }) 
           </div>
         )}
 
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-sm" type="button" onClick={() => setShowMenu((s) => !s)}>
             {showMenu ? 'Hide menu settings' : 'Menu settings'}
+          </button>
+          <button className="btn btn-sm" type="button" onClick={() => setResetting(true)}>
+            Reset password
           </button>
         </div>
 
@@ -181,7 +185,95 @@ function UserCard({ user, adminFacs, hidden, onRole, onAdd, onRemove, onMenu }) 
           </>
         )}
       </div>
+
+      {resetting && (
+        <ResetPassword user={user} onClose={() => setResetting(false)} />
+      )}
     </div>
+  )
+}
+
+function ResetPassword({ user, onClose }) {
+  const [password, setPassword] = useState('')
+  const [temporary, setTemporary] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+  const [done, setDone] = useState(false)
+
+  const randomize = () => {
+    // A readable 12-char temp password: letters + digits, no ambiguous chars.
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    let out = ''
+    const r = crypto.getRandomValues(new Uint32Array(12))
+    for (let i = 0; i < 12; i++) out += chars[r[i] % chars.length]
+    setPassword(out)
+  }
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (password.length < 8) return setErr('Use a password of at least 8 characters.')
+    setBusy(true); setErr(null)
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-password', {
+        body: { user_id: user.id, password, temporary },
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      setDone(true)
+    } catch (e2) {
+      const msg = /Failed to send|not found|Function not found|404/i.test(e2.message ?? '')
+        ? 'The reset-password function is not deployed yet. Deploy supabase/functions/reset-password, then try again.'
+        : e2.message
+      setErr(msg)
+    }
+    setBusy(false)
+  }
+
+  if (done) {
+    return (
+      <Modal title="Password set" onClose={onClose}>
+        <p>
+          {personName(user)}’s password is now <b className="mono">{password}</b>.
+          {temporary
+            ? ' They will be asked to choose a new one the next time they sign in.'
+            : ' This is their permanent password until they change it.'}
+        </p>
+        <p style={{ color: 'var(--ink-3)', fontSize: 12 }}>
+          Copy it now — it will not be shown again. Share it with the user over a
+          secure channel.
+        </p>
+        <div className="form-actions">
+          <button type="button" className="btn btn-primary" onClick={onClose}>Done</button>
+        </div>
+      </Modal>
+    )
+  }
+
+  return (
+    <Modal title={`Reset password — ${personName(user)}`} onClose={onClose}>
+      <form onSubmit={submit}>
+        <Banner kind="error">{err}</Banner>
+        <div className="grid">
+          <Field label="New password" span={12} required
+                 hint="At least 8 characters.">
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Text value={password} onChange={setPassword} type="text" autoFocus />
+              <button type="button" className="btn btn-sm" onClick={randomize}>Generate</button>
+            </div>
+          </Field>
+          <div className="f-12">
+            <Check label="Temporary — require the user to change it at next sign-in"
+                   value={temporary} onChange={setTemporary} />
+          </div>
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-primary" disabled={busy}>
+            {busy ? 'Setting…' : 'Set password'}
+          </button>
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+        </div>
+      </form>
+    </Modal>
   )
 }
 

@@ -57,6 +57,50 @@ function SignIn() {
   )
 }
 
+function ChangePassword() {
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    if (password.length < 8) return setError('Use a password of at least 8 characters.')
+    if (password !== confirm) return setError('The two passwords do not match.')
+    setBusy(true); setError(null)
+    // Clear the flag in the same call that sets the new password.
+    const { error } = await supabase.auth.updateUser({
+      password, data: { must_change_password: false },
+    })
+    if (error) { setError(error.message); setBusy(false); return }
+    // Refresh so the session (and its metadata) reflect the change.
+    await supabase.auth.refreshSession()
+  }
+
+  return (
+    <div className="auth-wrap">
+      <form className="auth-card" onSubmit={submit}>
+        <h1>Choose a new password</h1>
+        <p>Your password was set by an administrator. Pick a new one to continue.</p>
+        <Banner kind="error">{error}</Banner>
+        <Field label="New password" span={12}>
+          <Text value={password} onChange={setPassword} type="password"
+                autoComplete="new-password" required />
+        </Field>
+        <Field label="Confirm new password" span={12}>
+          <Text value={confirm} onChange={setConfirm} type="password"
+                autoComplete="new-password" required />
+        </Field>
+        <button className="btn btn-primary" disabled={busy}>
+          {busy ? 'Saving…' : 'Save and continue'}
+        </button>
+        <button type="button" className="btn" style={{ marginTop: 8 }}
+                onClick={() => supabase.auth.signOut()}>Sign out</button>
+      </form>
+    </div>
+  )
+}
+
 function Shell({ children }) {
   const { profile, memberships, facilityId, facility, role, isManager, isAdmin,
           menuHidden, switchFacility } = useApp()
@@ -155,6 +199,7 @@ function Gate() {
   const { session, loading, memberships } = useApp()
   if (loading) return <div className="auth-wrap" />
   if (!session) return <SignIn />
+  if (session.user?.user_metadata?.must_change_password) return <ChangePassword />
   if (!memberships.length) return <NoCampus />
   return (
     <BrowserRouter>

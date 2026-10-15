@@ -28,6 +28,7 @@ export default function Mis() {
   const [days, setDays] = useState('90')
   const [terr, setTerr] = useState('')
   const [cat, setCat] = useState('')
+  const [search, setSearch] = useState('')
 
   const catName = useMemo(() => {
     const m = {}; for (const c of lookups.categories ?? []) m[c.id] = c.name; return m
@@ -44,6 +45,7 @@ export default function Mis() {
   const { cold, cutoffISO } = useMemo(() => {
     const cutoff = new Date(Date.now() - Number(days) * DAY)
     const cutoffISO = cutoff.toISOString().slice(0, 10)
+    const needle = search.trim().toLowerCase()
 
     const by = new Map()
     for (const r of q.rows) {
@@ -72,7 +74,8 @@ export default function Mis() {
       .map((e) => ({ ...e, category: mode(e.cats), territory: mode(e.terrs),
         sinceAdmit: daysSince(e.lastAdmit), sinceRef: daysSince(e.lastRef) }))
       // Filters
-      .filter((e) => (!terr || e.terrs[terrName(terr)]) && (!cat || e.cats[catName[cat]]))
+      .filter((e) => (!terr || e.terrs[terrName(terr)]) && (!cat || e.cats[catName[cat]])
+        && (!needle || (e.name ?? '').toLowerCase().includes(needle)))
       // Longest cold first: never-admitted (null) on top, then oldest admit.
       .sort((a, b) => {
         if (a.lastAdmit === b.lastAdmit) return (b.sinceRef ?? 0) - (a.sinceRef ?? 0)
@@ -81,7 +84,7 @@ export default function Mis() {
         return a.lastAdmit < b.lastAdmit ? -1 : 1
       })
     return { cold, cutoffISO }
-  }, [q.rows, days, terr, cat, catName, lookups.territories])
+  }, [q.rows, days, terr, cat, search, catName, lookups.territories])
 
   const exportCsv = () => {
     const columns = [
@@ -113,6 +116,9 @@ export default function Mis() {
       </div>
 
       <div className="toolbar">
+        <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
+               placeholder="Search company…" aria-label="Search company name"
+               style={{ minWidth: 180 }} />
         <select value={days} onChange={(e) => setDays(e.target.value)} aria-label="Window">
           {WINDOWS.map(([v, l]) => <option key={v} value={v}>No admit in {l}</option>)}
         </select>

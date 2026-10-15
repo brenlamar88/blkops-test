@@ -116,10 +116,10 @@ export default function TerritoryMap() {
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.key}>
-                    <td className={`rail ${r.map ? '' : ''}`}>{r.city}</td>
-                    <td>{r.map ? <TerritoryChip name={terrName(r.map.territory_id)} />
+                    <td className="rail" data-label="City">{r.city}</td>
+                    <td data-label="Territory">{r.map ? <TerritoryChip name={terrName(r.map.territory_id)} />
                               : <span style={{ color: 'var(--ink-3)' }}>— unmapped —</span>}</td>
-                    <td>
+                    <td data-label="Assign">
                       <Select value={r.map?.territory_id ?? ''}
                               onChange={(val) => assign(r, val)}
                               disabled={!isAdmin || busy === r.key}

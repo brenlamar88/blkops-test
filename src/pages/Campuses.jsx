@@ -82,11 +82,11 @@ export default function Campuses() {
               <tbody>
                 {facQ.rows.map((f) => (
                   <tr key={f.id}>
-                    <td>{f.name}</td>
-                    <td className="mono">{f.slug}</td>
-                    <td>{f.active ? <Chip kind="ok">Active</Chip> : <Chip kind="bad">Inactive</Chip>}</td>
-                    <td>{myFacIds.has(f.id) ? <Chip>Member</Chip> : '—'}</td>
-                    <td>
+                    <td data-label="Campus">{f.name}</td>
+                    <td className="mono" data-label="Slug">{f.slug}</td>
+                    <td data-label="Status">{f.active ? <Chip kind="ok">Active</Chip> : <Chip kind="bad">Inactive</Chip>}</td>
+                    <td data-label="Yours">{myFacIds.has(f.id) ? <Chip>Member</Chip> : '—'}</td>
+                    <td data-label="">
                       <div className="row-actions">
                         <button className="btn btn-sm" type="button"
                                 onClick={() => setEditing(f)}>Rename</button>

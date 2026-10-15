@@ -49,8 +49,8 @@ function Matrix({ title, badge, cats, pivot }) {
         <h2>{title}</h2>
         {badge}
       </div>
-      <div className="table-wrap">
-        <table className="pivot">
+      <div className="matrix-scroll">
+        <table className="pivot scorecard">
           <thead>
             <tr>
               <th>Activity type</th>

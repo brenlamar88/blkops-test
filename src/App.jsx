@@ -19,6 +19,7 @@ import Users from './pages/Users'
 import Campuses from './pages/Campuses'
 import TouchAnalysis from './pages/TouchAnalysis'
 import ReferralScorecard from './pages/ReferralScorecard'
+import Mis from './pages/Mis'
 import Reports from './pages/Reports'
 import { MENU, ADMIN_MENU, ADMIN_ONLY } from './lib/menu'
 
@@ -230,6 +231,7 @@ function Gate() {
           <Route path="/campuses" element={<Campuses />} />
           <Route path="/touch-analysis" element={<TouchAnalysis />} />
           <Route path="/referral-scorecard" element={<ReferralScorecard />} />
+          <Route path="/mis" element={<Mis />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

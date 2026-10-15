@@ -10,7 +10,8 @@ export const MENU = [
                 ['/prospectus', 'Prospectus']]],
   ['Reporting', [['/activity-dashboard', 'Activity dashboard'],
                  ['/touch-analysis', 'Touch analysis'],
-                 ['/referral-scorecard', 'Referral scorecard'], ['/reports', 'Reports']]],
+                 ['/referral-scorecard', 'Referral scorecard'],
+                 ['/mis', 'MIS'], ['/reports', 'Reports']]],
 ]
 
 // Shown only to managers/admins; Users and Campuses are gated to admins.

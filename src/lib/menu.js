@@ -14,12 +14,13 @@ export const MENU = [
                  ['/mis', 'MIS'], ['/reports', 'Reports']]],
 ]
 
-// Shown only to managers/admins; Users and Campuses are gated to admins.
+// Shown only to managers/admins; Users, Campuses and City check are admin-only.
 export const ADMIN_MENU = ['Admin', [['/territory-map', 'Territory map'],
+                                     ['/city-check', 'City check'],
                                      ['/users', 'Users'], ['/campuses', 'Campuses']]]
 
 // Admin-only nav items (managers see the rest of the Admin group but not these).
-export const ADMIN_ONLY = ['/users', '/campuses']
+export const ADMIN_ONLY = ['/users', '/campuses', '/city-check']
 
 // Dashboard is the landing page and never hideable, so it is not a toggle.
 export const HIDEABLE_ITEMS = [...MENU, ADMIN_MENU]

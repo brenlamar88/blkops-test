@@ -17,6 +17,7 @@ import ActivityDashboard from './pages/ActivityDashboard'
 import TerritoryMap from './pages/TerritoryMap'
 import Users from './pages/Users'
 import Campuses from './pages/Campuses'
+import CityCheck from './pages/CityCheck'
 import TouchAnalysis from './pages/TouchAnalysis'
 import ReferralScorecard from './pages/ReferralScorecard'
 import Mis from './pages/Mis'
@@ -229,6 +230,7 @@ function Gate() {
           <Route path="/territory-map" element={<TerritoryMap />} />
           <Route path="/users" element={<Users />} />
           <Route path="/campuses" element={<Campuses />} />
+          <Route path="/city-check" element={<CityCheck />} />
           <Route path="/touch-analysis" element={<TouchAnalysis />} />
           <Route path="/referral-scorecard" element={<ReferralScorecard />} />
           <Route path="/mis" element={<Mis />} />

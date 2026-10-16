@@ -4,6 +4,14 @@ import { supabase } from '../lib/supabase'
 import { useApp, useQuery, fetchAll, save, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, DataTable, Banner, Empty, Loading, Chip, TerritoryChip, Modal } from '../components/ui'
 import { fmtDate } from '../lib/format'
+import { COMPANY_STATUSES } from '../lib/enums'
+
+// Strip any existing "(formerly …)" suffix so repeated renames don't nest.
+const baseName = (s) => (s ?? '').replace(/\s*\(formerly .*\)\s*$/i, '').trim()
+
+const StatusChip = ({ status }) =>
+  !status || status === 'active' ? null
+    : <Chip kind={status === 'closed' ? 'bad' : ''}>{COMPANY_STATUSES[status] ?? status}</Chip>
 
 const SEL = `*, category:categories(id,name), subcategory:subcategories(id,name)`
 
@@ -11,17 +19,20 @@ export function CompanyList() {
   const { lookups, facilityId } = useApp()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
+  const [status, setStatus] = useState('open')   // open (hide closed) | closed | all
 
   const { rows, loading, error } = useQuery(() => fetchAll(() => {
     let q = supabase.from('companies').select(SEL)
       .eq('active', true).is('merged_into_id', null).order('name').order('id')
     if (category) q = q.eq('category_id', category)
+    if (status === 'open') q = q.neq('status', 'closed')
+    else if (status === 'closed') q = q.eq('status', 'closed')
     if (search.trim()) {
       const s = `%${search.trim()}%`
       q = q.or(`name.ilike.${s},city.ilike.${s}`)
     }
     return q
-  }), [search, category])
+  }), [search, category, status])
 
   // Territory for this account, derived from its city via the selected
   // campus's map — the same resolution the forms and database use.
@@ -46,6 +57,11 @@ export function CompanyList() {
           <option value="">All categories</option>
           {(lookups.categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
+          <option value="open">Open (hide closed)</option>
+          <option value="closed">Closed only</option>
+          <option value="all">All statuses</option>
+        </select>
         <div className="spacer" />
         <span className="mono" style={{ color: '#7d8fa1', fontSize: 12 }}>
           {loading ? '' : `${rows.length} shown`}
@@ -59,7 +75,12 @@ export function CompanyList() {
                         action={<Link className="btn btn-primary" to="/companies/new">Add company</Link>} />}
           columns={[
             { key: 'name', label: 'Company',
-              render: (r) => <Link to={`/companies/${r.id}`}>{r.name}</Link> },
+              render: (r) => (
+                <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Link to={`/companies/${r.id}`}>{r.name}</Link>
+                  <StatusChip status={r.status} />
+                </span>
+              ) },
             { key: 'category', label: 'Category', sortValue: (r) => r.category?.name,
               render: (r) => r.category?.name ?? '—' },
             { key: 'city', label: 'City' },
@@ -221,8 +242,11 @@ export function CompanyForm() {
 export function CompanyDetail() {
   const { id } = useParams()
   const { lookups } = useApp()
-  const { rows: [co] = [], loading } = useQuery(
+  const { rows: [co] = [], loading, refresh } = useQuery(
     () => supabase.from('companies').select(SEL).eq('id', id), [id])
+  const [renaming, setRenaming] = useState(false)
+  const [statusErr, setStatusErr] = useState(null)
+  const [statusBusy, setStatusBusy] = useState(false)
   const coTerr = (lookups.territories ?? [])
     .find((t) => t.id === territoryForCity(lookups.territoryCities, co?.city))?.name
   const { rows: contacts } = useQuery(
@@ -235,6 +259,21 @@ export function CompanyDetail() {
   const { rows: [na] = [] } = useQuery(
     () => supabase.from('needs_analysis').select('*').eq('company_id', id), [id])
 
+  const applyStatus = async (patch) => {
+    setStatusBusy(true); setStatusErr(null)
+    const { error } = await supabase.from('companies').update(patch).eq('id', id)
+    setStatusBusy(false)
+    if (error) { setStatusErr(error.message); return false }
+    refresh()
+    return true
+  }
+
+  const markClosed = () => {
+    if (!confirm(`Mark ${baseName(co.name)} as closed? It stays on file for history but is hidden from the default company list.`)) return
+    applyStatus({ status: 'closed' })
+  }
+  const reopen = () => applyStatus({ status: co.former_name ? 'name_change' : 'active' })
+
   if (loading) return <Loading rows={8} />
   if (!co) return <Empty title="Company not found" />
 
@@ -245,13 +284,31 @@ export function CompanyDetail() {
           <h1 className="caps">{co.name}</h1>
           <p className="caps">{[co.category?.name, co.subcategory?.name, co.city, co.state]
                 .filter(Boolean).join(' · ')}</p>
-          {coTerr && <div style={{ marginTop: 6 }}><TerritoryChip name={coTerr} /></div>}
+          <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            {coTerr && <TerritoryChip name={coTerr} />}
+            <StatusChip status={co.status} />
+          </div>
         </div>
         <div className="row-actions">
           <Link className="btn" to={`/companies/${id}/edit`}>Edit</Link>
+          <button className="btn" type="button" onClick={() => setRenaming(true)}>Name change</button>
+          {co.status === 'closed'
+            ? <button className="btn" type="button" onClick={reopen} disabled={statusBusy}>Reopen</button>
+            : <button className="btn btn-danger" type="button" onClick={markClosed} disabled={statusBusy}>Mark closed</button>}
           <Link className="btn btn-primary" to={`/activities/new?company=${id}`}>Log activity</Link>
         </div>
       </div>
+
+      {statusErr && <Banner kind="error">{statusErr}</Banner>}
+
+      {renaming && (
+        <NameChange co={co} busy={statusBusy}
+          onClose={() => setRenaming(false)}
+          onSave={async (finalName, former) => {
+            const ok = await applyStatus({ name: finalName, former_name: former, status: 'name_change' })
+            if (ok) setRenaming(false)
+          }} />
+      )}
 
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="card-head">
@@ -304,5 +361,46 @@ export function CompanyDetail() {
           ]} />
       </div>
     </>
+  )
+}
+
+// Rename a company in place, preserving the old name as "(formerly …)". The
+// account row is shared, so everything that references it follows the rename.
+function NameChange({ co, busy, onClose, onSave }) {
+  const old = baseName(co.name)
+  const [name, setName] = useState('')
+  const [err, setErr] = useState(null)
+  const preview = name.trim() ? `${name.trim()} (formerly ${old})` : ''
+
+  const submit = (e) => {
+    e.preventDefault()
+    const next = name.trim()
+    if (!next) return setErr('Enter the new company name.')
+    if (next.toLowerCase() === old.toLowerCase()) return setErr('That is already the current name.')
+    onSave(`${next} (formerly ${old})`, old)
+  }
+
+  return (
+    <Modal title="Name change" onClose={onClose}>
+      <form onSubmit={submit}>
+        <Banner kind="error">{err}</Banner>
+        <p style={{ marginTop: 0, color: 'var(--ink-2)', fontSize: 13 }}>
+          Current name: <b className="caps">{old}</b>. Enter the new name — the old one
+          is kept in parentheses so the account stays recognizable.
+        </p>
+        <Field label="New company name" span={12} required>
+          <Text value={name} onChange={setName} autoFocus />
+        </Field>
+        {preview && (
+          <p style={{ color: 'var(--ink-3)', fontSize: 12 }}>
+            Will display as: <b className="caps">{preview}</b>
+          </p>
+        )}
+        <div className="form-actions">
+          <button className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save name change'}</button>
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+        </div>
+      </form>
+    </Modal>
   )
 }

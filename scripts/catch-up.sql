@@ -252,3 +252,16 @@ grant execute on function find_company_duplicates(text, text, text, uuid, real) 
 
 -- Refresh PostgREST's schema cache so the new tables are visible immediately.
 notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------------
+-- 20260731000009_company_status.sql — name-change / closed lifecycle
+-- ---------------------------------------------------------------------
+alter table companies
+  add column if not exists status text not null default 'active',
+  add column if not exists former_name text;
+
+alter table companies drop constraint if exists companies_status_check;
+alter table companies add constraint companies_status_check
+  check (status in ('active', 'name_change', 'closed'));
+
+notify pgrst, 'reload schema';

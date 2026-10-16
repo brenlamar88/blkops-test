@@ -31,6 +31,14 @@ export const NA_TYPES = [
   'Community', 'Home Based Care',
 ]
 
+// Company lifecycle status (companies.status — a checked text column, not a
+// Postgres enum type). Value → display label.
+export const COMPANY_STATUSES = {
+  active: 'Active',
+  name_change: 'Name change',
+  closed: 'Closed',
+}
+
 // Six intake forms, two detail shapes.
 export const NA_SHAPE = {
   Eldercare: 'facility',

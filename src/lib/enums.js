@@ -39,6 +39,10 @@ export const COMPANY_STATUSES = {
   closed: 'Closed',
 }
 
+// Per-campus prospect tier on facility_companies.prospect_status (a checked
+// text column). How important a referral source is to that campus.
+export const PROSPECT_STATUSES = ['Potential Primary', 'Primary', 'Secondary']
+
 // Six intake forms, two detail shapes.
 export const NA_SHAPE = {
   Eldercare: 'facility',

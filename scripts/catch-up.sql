@@ -265,3 +265,14 @@ alter table companies add constraint companies_status_check
   check (status in ('active', 'name_change', 'closed'));
 
 notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------------
+-- 20260731000010_facility_company_prospect_status.sql — per-campus tier
+-- ---------------------------------------------------------------------
+alter table facility_companies add column if not exists prospect_status text;
+
+alter table facility_companies drop constraint if exists facility_companies_prospect_status_check;
+alter table facility_companies add constraint facility_companies_prospect_status_check
+  check (prospect_status is null or prospect_status in ('Potential Primary', 'Primary', 'Secondary'));
+
+notify pgrst, 'reload schema';

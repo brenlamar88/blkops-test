@@ -306,3 +306,9 @@ begin
 end $$;
 grant execute on function merge_city(text, text) to authenticated;
 notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------------
+-- 20260731000012_referral_contact_name.sql — free-text referral contact
+-- ---------------------------------------------------------------------
+alter table referrals add column if not exists referral_contact_name text;
+notify pgrst, 'reload schema';

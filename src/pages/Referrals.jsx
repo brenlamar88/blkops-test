@@ -10,7 +10,15 @@ import { UNIT_TYPES, ADMISSION_STATUSES } from '../lib/enums'
 
 const SEL = `*, submitter:profiles(first_name,last_name), territory:territories(name),
   company:companies(id,name,city), denial:denial_reasons(name),
+  contact:contacts!referrals_referral_contact_id_fkey(first_name,last_name),
   pins:payer_sources!referrals_primary_insurance_id_fkey(name)`
+
+// Referral contact: the linked contact record if present, else the free-text
+// name kept from an import. '—' when neither.
+const contactName = (r) => {
+  if (r.contact) return `${r.contact.first_name ?? ''} ${r.contact.last_name ?? ''}`.trim()
+  return r.referral_contact_name || '—'
+}
 
 export function ReferralList() {
   const { facilityId, lookups } = useApp()
@@ -78,6 +86,7 @@ export function ReferralList() {
                 {`${r.patient_first_name ?? '?'} ${r.patient_last_initial ?? '?'}.`}</span> },
             { key: 'company', label: 'Referred by', sortValue: (r) => r.company?.name,
               render: (r) => r.company ? <Link to={`/companies/${r.company.id}`}>{r.company.name}</Link> : '—' },
+            { key: 'contact', label: 'Contact', sortable: false, render: contactName },
             { key: 'territory', label: 'Territory', sortable: false,
               render: (r) => <TerritoryChip name={r.territory?.name} /> },
             { key: 'admission_status', label: 'Outcome',
@@ -193,7 +202,9 @@ export function ReferralForm() {
           <Field label="Referring company" span={7} hint="Category fills in from the company.">
             <CompanyPicker value={v.prospect_company_id} onChange={pickCompany} />
           </Field>
-          <Field label="Referring contact" span={5}>
+          <Field label="Referring contact" span={5}
+                 hint={!v.referral_contact_id && v.referral_contact_name
+                   ? `Imported as: ${v.referral_contact_name}` : undefined}>
             <Select value={v.referral_contact_id} onChange={set('referral_contact_id')}
                     disabled={!v.prospect_company_id}
                     options={(contacts ?? []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])} />

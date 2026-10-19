@@ -135,6 +135,21 @@ export function ActivityForm() {
 
   const submit = async (e) => {
     e.preventDefault()
+    // Every field is required except the medical director and decision-maker
+    // names (and the optional next-visit block).
+    const missing = []
+    if (!v.activity_date) missing.push('Date')
+    if (!v.time_of_activity) missing.push('Time')
+    if (!v.unit_type) missing.push('Unit type')
+    if (!v.territory_id) missing.push('Territory')
+    if (!v.company_id) missing.push('Company')
+    if (!v.contact_id) missing.push('Contact')
+    if (!v.type_of_contact) missing.push('Type of contact')
+    if (!v.activity_type) missing.push('Activity type')
+    if (!(Number(v.number_of_activities) > 0)) missing.push('Number of activities')
+    if (!v.service_cycle_stage_id) missing.push('Stage of service cycle')
+    if (!v.activity_information || !v.activity_information.trim()) missing.push('Activity information')
+    if (missing.length) return setError(`Please fill in: ${missing.join(', ')}.`)
     if (v.scheduled_next_visit && !v.next_visit_date)
       return setError('You marked a next visit as scheduled — add the date.')
     setBusy(true); setError(null)
@@ -161,20 +176,20 @@ export function ActivityForm() {
           <Field label="Date" span={3} required>
             <Text value={v.activity_date} onChange={set('activity_date')} type="date" required />
           </Field>
-          <Field label="Time" span={3}>
-            <Text value={v.time_of_activity} onChange={set('time_of_activity')} type="time" />
+          <Field label="Time" span={3} required>
+            <Text value={v.time_of_activity} onChange={set('time_of_activity')} type="time" required />
           </Field>
-          <Field label="Unit type" span={3}>
-            <Select value={v.unit_type} onChange={set('unit_type')} options={UNIT_TYPES} />
+          <Field label="Unit type" span={3} required>
+            <Select value={v.unit_type} onChange={set('unit_type')} options={UNIT_TYPES} required />
           </Field>
-          <Field label="Territory" span={3} hint="Fills in from the company's city.">
+          <Field label="Territory" span={3} required hint="Fills in from the company's city.">
             <Select value={v.territory_id} onChange={set('territory_id')}
-                    options={lookups.territories ?? []} />
+                    options={lookups.territories ?? []} required />
           </Field>
-          <Field label="Company" span={7}>
+          <Field label="Company" span={7} required>
             <CompanyPicker value={v.company_id} onChange={pickCompany} />
           </Field>
-          <Field label="Contact" span={5}
+          <Field label="Contact" span={5} required
                  hint={!v.company_id ? 'Pick a company to see its contacts.' : undefined}>
             <Select value={v.contact_id} onChange={set('contact_id')} disabled={!v.company_id}
                     options={(contacts ?? []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])} />
@@ -185,19 +200,19 @@ export function ActivityForm() {
 
         <div className="section-label">What happened</div>
         <div className="grid">
-          <Field label="Type of contact" span={4}>
-            <Select value={v.type_of_contact} onChange={set('type_of_contact')} options={CONTACT_METHODS} />
+          <Field label="Type of contact" span={4} required>
+            <Select value={v.type_of_contact} onChange={set('type_of_contact')} options={CONTACT_METHODS} required />
           </Field>
-          <Field label="Activity type" span={4}>
-            <Select value={v.activity_type} onChange={set('activity_type')} options={ACTIVITY_TYPES} />
+          <Field label="Activity type" span={4} required>
+            <Select value={v.activity_type} onChange={set('activity_type')} options={ACTIVITY_TYPES} required />
           </Field>
-          <Field label="Number of activities" span={4} hint="One entry can cover several touches.">
+          <Field label="Number of activities" span={4} required hint="One entry can cover several touches.">
             <Text value={v.number_of_activities} onChange={set('number_of_activities')}
-                  type="number" min="1" />
+                  type="number" min="1" required />
           </Field>
-          <Field label="Stage of service cycle" span={12}>
+          <Field label="Stage of service cycle" span={12} required>
             <Select value={v.service_cycle_stage_id} onChange={set('service_cycle_stage_id')}
-                    options={(lookups.stages ?? []).map((s) => [s.id, s.name])} />
+                    options={(lookups.stages ?? []).map((s) => [s.id, s.name])} required />
           </Field>
           <Field label="Medical director / primary provider" span={6}>
             <Text value={v.medical_director_name} onChange={set('medical_director_name')} />
@@ -205,9 +220,9 @@ export function ActivityForm() {
           <Field label="Utilization decision maker" span={6}>
             <Text value={v.decision_maker_name} onChange={set('decision_maker_name')} />
           </Field>
-          <Field label="Activity information" span={12}>
+          <Field label="Activity information" span={12} required>
             <Area value={v.activity_information} onChange={set('activity_information')}
-                  placeholder="What was discussed, what you left behind, what to follow up on." />
+                  placeholder="What was discussed, what you left behind, what to follow up on." required />
           </Field>
         </div>
 

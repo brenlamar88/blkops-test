@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, fetchAll, today, daysAgo } from '../lib/data'
+import { useApp, useQuery, fetchAll, today } from '../lib/data'
 import { Banner } from '../components/ui'
 import { UNIT_TYPES } from '../lib/enums'
 import { DonutBlock, MiniPanel, BreakdownPanel, NoData, colorMap } from '../components/charts'
@@ -55,7 +55,7 @@ function groupCounts(rows, keyFn, colors) {
 
 export default function ActivityDashboard() {
   const { facilityId, facility, lookups } = useApp()
-  const [from, setFrom] = useState(daysAgo(30))
+  const [from, setFrom] = useState(today())
   const [to, setTo] = useState(today())
   const [unit, setUnit] = useState('')
   const [rep, setRep] = useState('')

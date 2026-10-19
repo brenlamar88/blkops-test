@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useApp, useQuery, fetchAll, save, today, daysAgo, territoryForCity } from '../lib/data'
+import { useApp, useQuery, fetchAll, save, remove, today, daysAgo, territoryForCity } from '../lib/data'
 import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Chip, TerritoryChip } from '../components/ui'
 import QuickAddContact from '../components/QuickAddContact'
 import CompanyPicker from '../components/CompanyPicker'
@@ -26,7 +26,7 @@ export function ReferralList() {
   const [to, setTo] = useState(today())
   const [status, setStatus] = useState('')
 
-  const { rows, loading, error } = useQuery(() => {
+  const { rows, loading, error, refresh } = useQuery(() => {
     if (!facilityId) return null
     return fetchAll(() => {
       let q = supabase.from('referrals').select(SEL).eq('facility_id', facilityId)
@@ -36,6 +36,12 @@ export function ReferralList() {
       return q
     })
   }, [facilityId, from, to, status])
+
+  const del = async (r) => {
+    const who = `${r.patient_first_name ?? '?'} ${r.patient_last_initial ?? '?'}.`
+    if (!confirm(`Delete this referral (${who}, ${r.company?.name ?? 'no company'})? This cannot be undone.`)) return
+    try { await remove('referrals', r.id); refresh() } catch (e) { alert(e.message) }
+  }
 
   const s = useMemo(() => {
     const a = rows.filter((r) => r.admission_status === 'Admit').length
@@ -101,8 +107,11 @@ export function ReferralList() {
               render: (r) => r.pins?.name ?? '—' },
             { key: 'submitter', label: 'Rep', sortValue: (r) => r.submitter?.last_name,
               render: (r) => personName(r.submitter) },
-            { key: 'a', label: '', sortable: false,
-              render: (r) => <Link className="btn btn-sm" to={`/referrals/${r.id}/edit`}>Edit</Link> },
+            { key: 'a', label: '', sortable: false, render: (r) => (
+                <div className="row-actions">
+                  <Link className="btn btn-sm" to={`/referrals/${r.id}/edit`}>Edit</Link>
+                  <button type="button" className="btn btn-sm btn-danger" onClick={() => del(r)}>Delete</button>
+                </div>) },
           ]} />
       </div>
     </>

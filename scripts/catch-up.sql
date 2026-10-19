@@ -312,3 +312,8 @@ notify pgrst, 'reload schema';
 -- ---------------------------------------------------------------------
 alter table referrals add column if not exists referral_contact_name text;
 notify pgrst, 'reload schema';
+
+-- ---------------------------------------------------------------------
+-- 20260731000013_unit_type_adol.sql — add Inpatient Adol unit type
+-- ---------------------------------------------------------------------
+alter type unit_type add value if not exists 'Inpatient Adol' after 'Inpatient Geri';

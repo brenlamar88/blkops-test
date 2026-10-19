@@ -1,7 +1,7 @@
 // Mirrors the Postgres enums, which came from the live forms:
 //   form 113 "New CRM Contact"                  activity capture
 //   form 135 "SDR Daily Referral Reporting Log (1)"  referrals
-export const UNIT_TYPES = ['Inpatient Adult', 'Inpatient Geri', 'IOP']
+export const UNIT_TYPES = ['Inpatient Adult', 'Inpatient Geri', 'Inpatient Adol', 'IOP']
 
 export const CONTACT_METHODS = [
   'Rotation Schedule Visit', 'Maintenance Visit',

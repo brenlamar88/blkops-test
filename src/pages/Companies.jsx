@@ -16,12 +16,14 @@ const StatusChip = ({ status }) =>
 const SEL = `*, category:categories(id,name), subcategory:subcategories(id,name)`
 
 export function CompanyList() {
-  const { lookups, facilityId } = useApp()
+  const { lookups, facilityId, isAdmin } = useApp()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [status, setStatus] = useState('open')   // open (hide closed) | closed | all
+  const [sel, setSel] = useState(() => new Set())   // selected company ids (for merge)
+  const [merging, setMerging] = useState(false)
 
-  const { rows, loading, error } = useQuery(() => fetchAll(() => {
+  const { rows, loading, error, refresh } = useQuery(() => fetchAll(() => {
     let q = supabase.from('companies').select(SEL)
       .eq('active', true).is('merged_into_id', null).order('name').order('id')
     if (category) q = q.eq('category_id', category)
@@ -38,6 +40,11 @@ export function CompanyList() {
   // campus's map — the same resolution the forms and database use.
   const terrName = (tid) => (lookups.territories ?? []).find((t) => t.id === tid)?.name
   const coTerr = (r) => terrName(territoryForCity(lookups.territoryCities, r.city))
+
+  const toggleSel = (id) => setSel((s) => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n
+  })
+  const selRows = rows.filter((r) => sel.has(r.id))
 
   return (
     <>
@@ -68,12 +75,29 @@ export function CompanyList() {
         </span>
       </div>
 
+      {isAdmin && sel.size > 0 && (
+        <Banner kind="info">
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {sel.size} selected.
+            <button className="btn btn-sm btn-primary" type="button"
+                    disabled={sel.size !== 2} onClick={() => setMerging(true)}>
+              Merge 2 companies
+            </button>
+            {sel.size !== 2 && <span style={{ fontSize: 12 }}>Select exactly two to merge.</span>}
+            <button className="btn btn-sm" type="button" onClick={() => setSel(new Set())}>Clear</button>
+          </span>
+        </Banner>
+      )}
+
       <div className="card">
         <DataTable rows={rows} loading={loading} error={error} territoryOf={coTerr}
           empty={<Empty title="No companies yet"
                         body="Add your first account, or import from the old sites."
                         action={<Link className="btn btn-primary" to="/companies/new">Add company</Link>} />}
           columns={[
+            ...(isAdmin ? [{ key: 'sel', label: '', sortable: false, render: (r) => (
+              <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggleSel(r.id)}
+                     aria-label={`Select ${r.name}`} />) }] : []),
             { key: 'name', label: 'Company',
               render: (r) => (
                 <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -92,7 +116,75 @@ export function CompanyList() {
               render: (r) => <Link className="btn btn-sm" to={`/companies/${r.id}/edit`}>Edit</Link> },
           ]} />
       </div>
+
+      {merging && selRows.length === 2 && (
+        <MergeCompanies a={selRows[0]} b={selRows[1]}
+          onClose={() => setMerging(false)}
+          onDone={() => { setMerging(false); setSel(new Set()); refresh() }} />
+      )}
     </>
+  )
+}
+
+// Pick which of two companies to keep; the other is folded into it (its
+// activities, referrals, contacts and campus links move over) and hidden.
+function MergeCompanies({ a, b, onClose, onDone }) {
+  const [winner, setWinner] = useState(a.id)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+  const loser = winner === a.id ? b : a
+  const keep = winner === a.id ? a : b
+  const label = (c) => `${c.name}${c.city ? ` · ${c.city}` : ''}`
+
+  const submit = async (e) => {
+    e.preventDefault()
+    setBusy(true); setErr(null)
+    try {
+      const { data, error } = await supabase.rpc('merge_companies', { p_loser: loser.id, p_winner: winner })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      onDone()
+    } catch (e2) {
+      const msg = /not found|Function not found|404/i.test(e2.message ?? '')
+        ? 'The merge function is not deployed yet. Deploy migration 014 (merge_companies), then try again.'
+        : e2.message
+      setErr(msg); setBusy(false)
+    }
+  }
+
+  return (
+    <Modal title="Merge companies" onClose={onClose}>
+      <form onSubmit={submit}>
+        <Banner kind="error">{err}</Banner>
+        <p style={{ marginTop: 0, color: 'var(--ink-2)', fontSize: 13 }}>
+          Choose the company to <b>keep</b>. The other is merged into it — its
+          activities, referrals, contacts and campus links move over, and it is
+          hidden from the list. This can’t be undone.
+        </p>
+        <div className="dupe-list">
+          {[a, b].map((c) => (
+            <label key={c.id} className="dupe" style={{ cursor: 'pointer' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input type="radio" name="winner" checked={winner === c.id}
+                       onChange={() => setWinner(c.id)} />
+                <span className="dupe-main">
+                  <span className="dupe-name caps">{c.name}</span>
+                  <span className="dupe-sub caps">{[c.category?.name, c.city].filter(Boolean).join(' · ') || '—'}</span>
+                </span>
+              </span>
+              <Chip kind={winner === c.id ? 'ok' : ''}>{winner === c.id ? 'Keep' : 'Merge in'}</Chip>
+            </label>
+          ))}
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+          Keeping <b className="caps">{label(keep)}</b>; merging in <b className="caps">{label(loser)}</b>.
+        </p>
+        <div className="form-actions">
+          <button className="btn btn-primary" disabled={busy}>{busy ? 'Merging…' : 'Merge'}</button>
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+        </div>
+      </form>
+    </Modal>
   )
 }
 

@@ -317,3 +317,37 @@ notify pgrst, 'reload schema';
 -- 20260731000013_unit_type_adol.sql — add Inpatient Adol unit type
 -- ---------------------------------------------------------------------
 alter type unit_type add value if not exists 'Inpatient Adol' after 'Inpatient Geri';
+
+-- ---------------------------------------------------------------------
+-- 20260731000014_merge_companies.sql — fold a duplicate company into another
+-- ---------------------------------------------------------------------
+create or replace function merge_companies(p_loser uuid, p_winner uuid)
+returns json language plpgsql security definer set search_path = public as $$
+declare o1 uuid; o2 uuid; acts int; refs int; cons int; fcs int; loser_na int;
+begin
+  if p_loser is null or p_winner is null or p_loser = p_winner then
+    raise exception 'pick two different companies';
+  end if;
+  select organization_id into o1 from companies where id = p_loser;
+  select organization_id into o2 from companies where id = p_winner;
+  if o1 is null or o2 is null then raise exception 'company not found'; end if;
+  if o1 <> o2 then raise exception 'companies are in different organizations'; end if;
+  if not is_org_admin(o1) then raise exception 'company merge is admin-only'; end if;
+  update daily_activities set company_id = p_winner where company_id = p_loser;
+  get diagnostics acts = row_count;
+  update referrals set prospect_company_id = p_winner where prospect_company_id = p_loser;
+  get diagnostics refs = row_count;
+  update contacts set company_id = p_winner where company_id = p_loser;
+  get diagnostics cons = row_count;
+  update facility_companies fc set company_id = p_winner
+   where fc.company_id = p_loser
+     and not exists (select 1 from facility_companies w where w.company_id = p_winner and w.facility_id = fc.facility_id);
+  get diagnostics fcs = row_count;
+  delete from facility_companies where company_id = p_loser;
+  update companies set merged_into_id = p_winner where merged_into_id = p_loser;
+  select count(*) into loser_na from needs_analysis where company_id = p_loser;
+  update companies set merged_into_id = p_winner, active = false, updated_at = now() where id = p_loser;
+  return json_build_object('activities_moved', acts, 'referrals_moved', refs, 'contacts_moved', cons, 'facility_links_moved', fcs, 'loser_needs_analysis_left', loser_na);
+end $$;
+grant execute on function merge_companies(uuid, uuid) to authenticated;
+notify pgrst, 'reload schema';

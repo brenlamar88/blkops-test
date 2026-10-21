@@ -98,7 +98,7 @@ export default function Reports() {
         { key: 'territory', label: 'Territory', csv: (r) => r.territory?.name,
           render: (r) => r.territory?.name ?? '—' },
         { key: 'admission_status', label: 'Outcome',
-          render: (r) => r.admission_status ?? 'Pending' },
+          render: (r) => r.admission_status ?? 'Not decided' },
         { key: 'denial', label: 'Denial reason', csv: (r) => r.denial?.name,
           render: (r) => r.denial?.name ?? '—' },
         { key: 'admit_denial_date', label: 'Decision date',

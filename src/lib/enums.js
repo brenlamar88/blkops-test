@@ -14,7 +14,13 @@ export const ACTIVITY_TYPES = [
   'Follow-Up', 'HWD Survey', "Thank You's", 'Pre Screen', 'Leave Behind',
 ]
 
+// Mirrors the Postgres admission_status enum. 'Pending' remains a valid DB
+// value for historical rows but is retired from the UI — new referrals are
+// either decided (Admit/Denial) or left undecided (null, "Not decided").
 export const ADMISSION_STATUSES = ['Admit', 'Pending', 'Denial']
+
+// Outcomes offered in the referral form and the referral-list filter.
+export const REFERRAL_OUTCOMES = ['Admit', 'Denial']
 export const RECOMMENDATIONS = ['Primary', 'Secondary', 'Tertiary']
 export const MH_SETTINGS = ['Inpatient', 'Outpatient']
 export const TRAINING_NEEDS = ['Yes', 'No', 'NA']

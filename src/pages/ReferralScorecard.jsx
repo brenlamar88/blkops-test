@@ -15,13 +15,13 @@ import { downloadCsv } from '../lib/csv'
 ------------------------------------------------------------------ */
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const STATUSES = ['Admit', 'Pending', 'Denial']
+const STATUSES = ['Admit', 'Denial', 'Not decided']
 
 export default function ReferralScorecard() {
   const { facilityId, facility, lookups } = useApp()
   const thisYear = new Date().getFullYear()
   const [year, setYear] = useState(thisYear)
-  const [statuses, setStatuses] = useState({ Admit: true, Pending: false, Denial: false })
+  const [statuses, setStatuses] = useState({ Admit: true, Denial: false, 'Not decided': false })
   const [terr, setTerr] = useState('')
   const [cat, setCat] = useState('')
   const [topN, setTopN] = useState('20')
@@ -39,7 +39,7 @@ export default function ReferralScorecard() {
 
   const rows = useMemo(() => q.rows.filter((r) => {
     if (!r.prospect_company_id || !r.company) return false
-    if (!statuses[r.admission_status || 'Pending']) return false
+    if (!statuses[r.admission_status || 'Not decided']) return false
     if (terr && r.territory_id !== terr) return false
     if (cat && r.category_id !== cat) return false
     return true

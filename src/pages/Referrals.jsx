@@ -6,7 +6,7 @@ import { Field, Text, Select, Area, Check, DataTable, Banner, Empty, Loading, Ch
 import QuickAddContact from '../components/QuickAddContact'
 import CompanyPicker from '../components/CompanyPicker'
 import { fmtDate, personName } from '../lib/format'
-import { UNIT_TYPES, ADMISSION_STATUSES } from '../lib/enums'
+import { UNIT_TYPES, REFERRAL_OUTCOMES } from '../lib/enums'
 
 const SEL = `*, submitter:profiles(first_name,last_name), territory:territories(name),
   company:companies(id,name,city), denial:denial_reasons(name),
@@ -65,7 +65,7 @@ export function ReferralList() {
         <div className="kpi"><span className="l">Referrals</span><span className="n">{rows.length}</span></div>
         <div className="kpi"><span className="l">Admits</span><span className="n">{s.a}</span></div>
         <div className="kpi"><span className="l">Denials</span><span className="n">{s.d}</span></div>
-        <div className="kpi"><span className="l">Pending</span><span className="n">{s.p}</span></div>
+        <div className="kpi"><span className="l">Undecided</span><span className="n">{s.p}</span></div>
         <div className="kpi"><span className="l">Admit rate</span>
           <span className="n">{s.rate === null ? '—' : `${s.rate}%`}</span></div>
       </div>
@@ -76,7 +76,7 @@ export function ReferralList() {
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All outcomes</option>
-          {ADMISSION_STATUSES.map((x) => <option key={x} value={x}>{x}</option>)}
+          {REFERRAL_OUTCOMES.map((x) => <option key={x} value={x}>{x}</option>)}
         </select>
       </div>
 
@@ -100,7 +100,7 @@ export function ReferralList() {
                 ? <Chip kind={r.admission_status === 'Admit' ? 'ok'
                         : r.admission_status === 'Denial' ? 'bad' : ''}>
                     {r.admission_status}</Chip>
-                : <Chip>Pending</Chip> },
+                : <Chip>Not decided</Chip> },
             { key: 'denial', label: 'Denial reason', sortable: false,
               render: (r) => r.denial?.name ?? '—' },
             { key: 'pins', label: 'Primary payer', sortable: false,
@@ -260,7 +260,7 @@ export function ReferralForm() {
           </Field>
           <Field label="Outcome" span={4}>
             <Select value={v.admission_status} onChange={set('admission_status')}
-                    options={ADMISSION_STATUSES} placeholder="— Not decided —" />
+                    options={REFERRAL_OUTCOMES} placeholder="— Not decided —" />
           </Field>
           <Field label="Admit / denial date" span={4}>
             <Text value={v.admit_denial_date} onChange={set('admit_denial_date')} type="date" />

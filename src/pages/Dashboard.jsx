@@ -58,7 +58,7 @@ export default function Dashboard() {
         <Kpi label="Contacts" value={contactCount ?? 0} loading={lk} />
         <Kpi label="Needs analyses" value={naCount ?? 0} loading={ln} />
         <Kpi label="Activity, 7 days" value={actWeekCount ?? 0} loading={law} />
-        <Kpi label="Referrals pending" value={pendingCount ?? 0} loading={lrc} />
+        <Kpi label="Awaiting outcome" value={pendingCount ?? 0} loading={lrc} />
       </div>
 
       <div className="card" style={{ marginBottom: 14 }}><div className="card-body">
@@ -103,7 +103,7 @@ export default function Dashboard() {
               render: (r) => <span className="mono">
                 {`${r.patient_first_name ?? '?'} ${r.patient_last_initial ?? '?'}.`}</span> },
             { key: 'company', label: 'Referred by', render: (r) => r.company?.name ?? '—' },
-            { key: 's', label: 'Status', sortable: false, render: () => <Chip>Pending</Chip> },
+            { key: 's', label: 'Status', sortable: false, render: () => <Chip>Not decided</Chip> },
             { key: 'a', label: '', sortable: false,
               render: (r) => <Link className="btn btn-sm" to={`/referrals/${r.id}/edit`}>Record outcome</Link> },
           ]} />

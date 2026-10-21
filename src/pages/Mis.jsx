@@ -29,6 +29,7 @@ export default function Mis() {
   const [terr, setTerr] = useState('')
   const [cat, setCat] = useState('')
   const [search, setSearch] = useState('')
+  const [hideNever, setHideNever] = useState(false)   // drop sources that never admitted
 
   const catName = useMemo(() => {
     const m = {}; for (const c of lookups.categories ?? []) m[c.id] = c.name; return m
@@ -75,7 +76,8 @@ export default function Mis() {
         sinceAdmit: daysSince(e.lastAdmit), sinceRef: daysSince(e.lastRef) }))
       // Filters
       .filter((e) => (!terr || e.terrs[terrName(terr)]) && (!cat || e.cats[catName[cat]])
-        && (!needle || (e.name ?? '').toLowerCase().includes(needle)))
+        && (!needle || (e.name ?? '').toLowerCase().includes(needle))
+        && (!hideNever || e.lastAdmit))
       // Longest cold first: never-admitted (null) on top, then oldest admit.
       .sort((a, b) => {
         if (a.lastAdmit === b.lastAdmit) return (b.sinceRef ?? 0) - (a.sinceRef ?? 0)
@@ -84,7 +86,7 @@ export default function Mis() {
         return a.lastAdmit < b.lastAdmit ? -1 : 1
       })
     return { cold, cutoffISO }
-  }, [q.rows, days, terr, cat, search, catName, lookups.territories])
+  }, [q.rows, days, terr, cat, search, hideNever, catName, lookups.territories])
 
   const exportCsv = () => {
     const columns = [
@@ -130,6 +132,11 @@ export default function Mis() {
           <option value="">All categories</option>
           {(lookups.categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          <input type="checkbox" checked={hideNever}
+                 onChange={(e) => setHideNever(e.target.checked)} />
+          Hide never-admitted
+        </label>
         <div className="spacer" />
         <span className="mono" style={{ color: 'var(--ink-3)', fontSize: 12 }}>
           {q.loading ? '' : `${cold.length} cold ${cold.length === 1 ? 'source' : 'sources'} · since ${fmtDate(cutoffISO)}`}

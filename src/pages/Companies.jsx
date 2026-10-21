@@ -20,6 +20,7 @@ export function CompanyList() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [status, setStatus] = useState('open')   // open (hide closed) | closed | all
+  const [onlyAdmits, setOnlyAdmits] = useState(false)   // hide companies that never had an admit
   const [sel, setSel] = useState(() => new Set())   // selected company ids (for merge)
   const [merging, setMerging] = useState(false)
 
@@ -35,6 +36,21 @@ export function CompanyList() {
     }
     return q
   }), [search, category, status])
+
+  // Companies that have had at least one admit. Only loaded when the filter is
+  // on. RLS already scopes referrals to the current user's campuses, so this is
+  // "has an admit on any campus you work". Merges re-point prospect_company_id,
+  // so admits always land on the surviving company.
+  const { rows: admitRows, loading: admitsLoading } = useQuery(() => onlyAdmits
+    ? fetchAll(() => supabase.from('referrals').select('prospect_company_id')
+        .eq('admission_status', 'Admit').not('prospect_company_id', 'is', null))
+    : null, [onlyAdmits])
+  const admitSet = useMemo(
+    () => new Set(admitRows.map((r) => r.prospect_company_id)), [admitRows])
+
+  const shown = useMemo(
+    () => (onlyAdmits ? rows.filter((r) => admitSet.has(r.id)) : rows),
+    [rows, onlyAdmits, admitSet])
 
   // Territory for this account, derived from its city via the selected
   // campus's map — the same resolution the forms and database use.
@@ -69,9 +85,14 @@ export function CompanyList() {
           <option value="closed">Closed only</option>
           <option value="all">All statuses</option>
         </select>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+          <input type="checkbox" checked={onlyAdmits}
+                 onChange={(e) => setOnlyAdmits(e.target.checked)} />
+          Had an admit
+        </label>
         <div className="spacer" />
         <span className="mono" style={{ color: '#7d8fa1', fontSize: 12 }}>
-          {loading ? '' : `${rows.length} shown`}
+          {loading || (onlyAdmits && admitsLoading) ? '' : `${shown.length} shown`}
         </span>
       </div>
 
@@ -90,7 +111,7 @@ export function CompanyList() {
       )}
 
       <div className="card">
-        <DataTable rows={rows} loading={loading} error={error} territoryOf={coTerr}
+        <DataTable rows={shown} loading={loading || (onlyAdmits && admitsLoading)} error={error} territoryOf={coTerr}
           empty={<Empty title="No companies yet"
                         body="Add your first account, or import from the old sites."
                         action={<Link className="btn btn-primary" to="/companies/new">Add company</Link>} />}

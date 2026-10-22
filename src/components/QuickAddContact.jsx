@@ -22,6 +22,10 @@ export default function QuickAddContact({ companyId, onAdded }) {
 
   const submit = async (e) => {
     e.preventDefault()
+    // The modal is portaled to <body>, but React events still bubble through
+    // the component tree — so this submit would reach the activity/referral
+    // form's onSubmit and save it too. Stop it here.
+    e.stopPropagation()
     if (!v.first_name.trim() || !v.last_name.trim())
       return setErr('First and last name are both required.')
     setBusy(true); setErr(null)

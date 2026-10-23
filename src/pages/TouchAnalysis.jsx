@@ -85,7 +85,16 @@ export default function TouchAnalysis() {
   const [to, setTo] = useState(today())
   const [terr, setTerr] = useState('')
   const [unit, setUnit] = useState('')
+  const [user, setUser] = useState('')
   const [goal, setGoal] = useState(60)
+
+  // An activity's rep is a real login (user_id → profile) or a historical
+  // name with no account (source_rep_name). Key for filtering, label for show.
+  const actorKey = (r) => r.user_id ? `u:${r.user_id}`
+    : r.source_rep_name ? `n:${r.source_rep_name}` : 'none'
+  const actorLabel = (r) => r.user
+    ? (`${r.user.first_name ?? ''} ${r.user.last_name ?? ''}`.trim() || 'Unknown')
+    : (r.source_rep_name || 'Unassigned')
 
   const cats = useMemo(() => (lookups.categories ?? [])
     .slice().sort((a, b) => a.sort_order - b.sort_order).map((c) => c.name), [lookups.categories])
@@ -95,13 +104,22 @@ export default function TouchAnalysis() {
   const terrName = (id) => (lookups.territories ?? []).find((t) => t.id === id)?.name
 
   const q = useQuery(() => facilityId ? fetchAll(() => supabase.from('daily_activities')
-    .select('activity_type, number_of_activities, activity_date, territory_id, unit_type, company:companies(category_id)')
+    .select('activity_type, number_of_activities, activity_date, territory_id, unit_type, user_id, source_rep_name, user:profiles(first_name,last_name), company:companies(category_id)')
     .eq('facility_id', facilityId).gte('activity_date', from).lte('activity_date', to)
     .order('id')) : null, [facilityId, from, to])
 
+  // Every rep with activity in range, for the By-User filter (regardless of
+  // the other filters, so switching user never hides the rest of the list).
+  const userOptions = useMemo(() => {
+    const m = new Map()
+    for (const r of q.rows) { const k = actorKey(r); if (!m.has(k)) m.set(k, actorLabel(r)) }
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [q.rows])
+
   const rows = useMemo(() => q.rows.filter((r) =>
-    (!terr || r.territory_id === terr) && (!unit || r.unit_type === unit) && r.activity_type),
-    [q.rows, terr, unit])
+    (!terr || r.territory_id === terr) && (!unit || r.unit_type === unit)
+    && (!user || actorKey(r) === user) && r.activity_type),
+    [q.rows, terr, unit, user])
 
   // Build a blank pivot and a folder that adds touches to it.
   const blank = () => ({ rows: {}, rowTotal: {}, colTotal: {}, total: 0 })
@@ -142,7 +160,9 @@ export default function TouchAnalysis() {
                  letter: gradeLetter(overGoal ? all.total / overGoal : 0) } }
   }, [rows, cats, catName, gran, goal])
 
-  const scopeLabel = (terr && terrName(terr) ? `${terrName(terr)} · ` : '') + (unit ? `${unit} · ` : '')
+  const userLabel = user ? (userOptions.find(([k]) => k === user)?.[1] ?? '') : ''
+  const scopeLabel = (userLabel ? `${userLabel} · ` : '')
+    + (terr && terrName(terr) ? `${terrName(terr)} · ` : '') + (unit ? `${unit} · ` : '')
 
   const exportCsv = () => {
     const out = []
@@ -200,6 +220,10 @@ export default function TouchAnalysis() {
         <select value={unit} onChange={(e) => setUnit(e.target.value)} aria-label="Unit type">
           <option value="">All unit types</option>
           {UNIT_TYPES.map((u) => <option key={u} value={u}>{u}</option>)}
+        </select>
+        <select value={user} onChange={(e) => setUser(e.target.value)} aria-label="User">
+          <option value="">All users</option>
+          {userOptions.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
         </select>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-3)' }}>
           Goal/wk

@@ -78,7 +78,7 @@ export default function ActivityDashboard() {
     .order('id')) : null, [facilityId, from, to])
 
   const refsQ = useQuery(() => facilityId ? fetchAll(() => supabase.from('referrals')
-    .select(`id, admission_status, category_id, territory_id,
+    .select(`id, admission_status, category_id, territory_id, referral_unit_type,
              submitted_by, source_rep_name, submitter:profiles(first_name,last_name)`)
     .eq('facility_id', facilityId)
     .gte('referral_date', from).lte('referral_date', to)
@@ -115,7 +115,8 @@ export default function ActivityDashboard() {
     [allRefs, catName])
 
   const refs = allRefs.filter((r) =>
-    (!refCat || catName[r.category_id] === refCat) && (!refBy || refByLabel(r) === refBy))
+    (!unit || r.referral_unit_type === unit)
+    && (!refCat || catName[r.category_id] === refCat) && (!refBy || refByLabel(r) === refBy))
   const admits = refs.filter((r) => r.admission_status === 'Admit')
   const denials = refs.filter((r) => r.admission_status === 'Denial')
   const admitsByCat = groupCounts(admits, (r) => catName[r.category_id], catColors)
